@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Interactive A* and UCS Traversal Visualization</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --primary: #2563eb;
+    --primary-dark: #1d4ed8;
+    --primary-light: #93c5fd;
+    --success: #059669;
+    --success-dark: #065f46;
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-500: #6b7280;
+    --gray-700: #374151;
+    --gray-900: #111827;
+    --shadow-sm: 0 1px 2px 0 rgba(0,0,0,0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #f9fafb;
+    margin: 0;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: var(--gray-900);
+    line-height: 1.5;
+  }
+
+  header {
+    text-align: center;
+    max-width: 800px;
+    margin-bottom: 2rem;
+  }
+
+  
+
+  .subtitle {
+    color: var(--gray-500);
+    font-size: 1.1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .algo-comparison {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .algo-card {
+    background: white;
+    padding: 0.75rem 1.25rem;
+    border-radius: 0.5rem;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .algo-card .indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 999px;
+  }
+
+  .algo-card.astar .indicator {
+    background: var(--primary);
+  }
+
+  .algo-card.ucs .indicator {
+    background: var(--success);
+  }
+
+  .container {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    margin-top: 1rem;
+    width: 100%;
+    max-width: 1200px;
+  }
+
+  .graph-container {
+    flex: 1;
+    min-width: 0;
+    border: 1px solid var(--gray-200);
+    background: white;
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    box-shadow: var(--shadow-md);
+    transition: all 0.2s ease;
+  }
+
+  .graph-container:hover {
+    box-shadow: var(--shadow-lg);
+  }
+
+  .title {
+    text-align: center;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    font-size: 1.25rem;
+    color: var(--gray-700);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+
+  .title svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .graph-wrapper {
+    position: relative;
+    width: 100%;
+    height: 400px;
+    background: #f8fafc;
+    border-radius: 0.5rem;
+    overflow: hidden;
+  }
+
+  svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  .node circle {
+    fill: #e2e8f0;
+    stroke: #94a3b8;
+    stroke-width: 2px;
+    transition: all 0.3s ease;
+  }
+
+  .node text {
+    font-weight: 600;
+    fill: var(--gray-900);
+    user-select: none;
+    pointer-events: none;
+    font-size: 0.9rem;
+  }
+
+  .edge path {
+    fill: none;
+    stroke: #cbd5e1;
+    stroke-width: 2;
+    transition: all 0.3s ease;
+  }
+
+  .weight-label {
+    fill: var(--gray-700);
+    font-size: 0.75rem;
+    font-weight: 500;
+    user-select: none;
+    pointer-events: none;
+    background: white;
+    padding: 0 0.25rem;
+  }
+
+  .active-node circle {
+    fill: var(--primary);
+    stroke-width: 3px;
+    stroke: var(--primary-dark);
+    filter: drop-shadow(0 0 6px rgba(37, 99, 235, 0.4));
+  }
+
+  .visited-node circle {
+    fill: var(--primary-light);
+    stroke: var(--primary);
+  }
+
+  .final-path circle {
+    fill: var(--success);
+    stroke-width: 3px;
+    stroke: var(--success-dark);
+    filter: drop-shadow(0 0 6px rgba(5, 150, 105, 0.3));
+  }
+
+  .final-path line, .final-path path {
+    stroke: var(--success);
+    stroke-width: 3px;
+  }
+
+  .controls {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  button {
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 500;
+    background-color: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    box-shadow: var(--shadow-sm);
+  }
+
+  button:hover {
+    background-color: var(--primary-dark);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+  }
+
+  button:active {
+    transform: translateY(0);
+  }
+
+  button:disabled {
+    background-color: #cbd5e1;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+  }
+
+  button svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .stats {
+    display: flex;
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .stat-card {
+    background: white;
+    padding: 1rem 1.5rem;
+    border-radius: 0.5rem;
+    box-shadow: var(--shadow-sm);
+    min-width: 150px;
+    text-align: center;
+  }
+
+  .stat-card h3 {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--gray-500);
+    margin-bottom: 0.5rem;
+  }
+
+  .stat-card p {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--gray-900);
+    margin: 0;
+  }
+
+  .legend {
+    display: flex;
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+  }
+
+  .legend-color {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+  }
+
+  .speed-control {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: white;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .speed-control label {
+    font-size: 0.875rem;
+    color: var(--gray-500);
+  }
+
+  .speed-control select {
+    border: 1px solid var(--gray-200);
+    border-radius: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    font-family: inherit;
+  }
+
+  @media (max-width: 768px) {
+    .container {
+      flex-direction: column;
+      align-items: center;
+    }
+    
+    .graph-container {
+      width: 100%;
+      max-width: 500px;
+    }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Amazon Delivery Routing Algorithms</h1>
+  <p class="subtitle">Comparing pathfinding efficiency between A* Search and Uniform Cost Search</p>
+  
+  <div class="algo-comparison">
+    <div class="algo-card astar">
+      <div class="indicator"></div>
+      <div>
+        <strong>A* Search</strong> - Uses heuristic + path cost
+      </div>
+    </div>
+    <div class="algo-card ucs">
+      <div class="indicator"></div>
+      <div>
+        <strong>Uniform Cost Search</strong> - Uses path cost only
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+  <div class="graph-container" id="aStar-container">
+    <div class="title">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd" />
+      </svg>
+      A* Search Traversal
+    </div>
+    <div class="graph-wrapper">
+      <svg id="aStar-svg"></svg>
+    </div>
+  </div>
+
+  <div class="graph-container" id="ucs-container">
+    <div class="title">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 0l-2 2a1 1 0 101.414 1.414L8 10.414l1.293 1.293a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+      </svg>
+      Uniform Cost Search Traversal
+    </div>
+    <div class="graph-wrapper">
+      <svg id="ucs-svg"></svg>
+    </div>
+  </div>
+</div>
+
+<div class="stats">
+  <div class="stat-card" id="aStar-stats">
+    <h3>A* Total Cost</h3>
+    <p>0</p>
+  </div>
+  <div class="stat-card" id="aStar-nodes">
+    <h3>A* Nodes Visited</h3>
+    <p>0</p>
+  </div>
+  <div class="stat-card" id="ucs-stats">
+    <h3>UCS Total Cost</h3>
+    <p>0</p>
+  </div>
+  <div class="stat-card" id="ucs-nodes">
+    <h3>UCS Nodes Visited</h3>
+    <p>0</p>
+  </div>
+</div>
+
+<div class="legend">
+  <div class="legend-item">
+    <div class="legend-color" style="background: #2563eb;"></div>
+    <span>Current Node</span>
+  </div>
+  <div class="legend-item">
+    <div class="legend-color" style="background: #93c5fd;"></div>
+    <span>Visited Node</span>
+  </div>
+  <div class="legend-item">
+    <div class="legend-color" style="background: #059669;"></div>
+    <span>Final Path</span>
+  </div>
+  <div class="legend-item">
+    <div class="legend-color" style="background: #e2e8f0;"></div>
+    <span>Unvisited Node</span>
+  </div>
+</div>
+
+<div class="controls">
+  <button id="startBtn">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+      <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
+    </svg>
+    Start Traversal
+  </button>
+  <button id="resetBtn">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+      <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" />
+    </svg>
+    Reset
+  </button>
+  <div class="speed-control">
+    <label for="speed">Speed:</label>
+    <select id="speed">
+      <option value="2000">0.5x</option>
+      <option value="1000" selected>1x</option>
+      <option value="500">2x</option>
+      <option value="250">4x</option>
+    </select>
+  </div>
+</div>
+
+<script>
+// Configuration
+const config = {
+  animationSpeed: 1000,
+  startNode: 'A',
+  goalNode: 'E'
+};
+
+// Graph Data - Nodes with heuristic (for A*), edges with weights
+const nodes = [
+  {id: 'A', x: 50, y: 350, h: 7},
+  {id: 'B', x: 150, y: 250, h: 6},
+  {id: 'C', x: 250, y: 350, h: 2},
+  {id: 'D', x: 350, y: 250, h: 1},
+  {id: 'E', x: 450, y: 350, h: 0},
+  {id: 'F', x: 350, y: 450, h: 3},
+  {id: 'G', x: 150, y: 450, h: 4},
+];
+
+const edges = [
+  {from: 'A', to: 'B', weight: 2},
+  {from: 'A', to: 'G', weight: 5},
+  {from: 'B', to: 'C', weight: 4},
+  {from: 'B', to: 'D', weight: 7},
+  {from: 'C', to: 'E', weight: 3},
+  {from: 'D', to: 'E', weight: 1},
+  {from: 'C', to: 'F', weight: 6},
+  {from: 'F', to: 'E', weight: 1},
+  {from: 'G', to: 'F', weight: 2},
+];
+
+// Helper to get node by id
+function getNode(id) {
+  return nodes.find(n => n.id === id);
+}
+
+// Draw graph
+function drawGraph(svgId) {
+  const svg = document.getElementById(svgId);
+  svg.innerHTML = '';
+
+  // Draw edges
+  edges.forEach(edge => {
+    const fromNode = getNode(edge.from);
+    const toNode = getNode(edge.to);
+
+    // Draw edge line
+    const line = document.createElementNS("http://www.w3.org/2000/svg", 'line');
+    line.setAttribute('x1', fromNode.x);
+    line.setAttribute('y1', fromNode.y);
+    line.setAttribute('x2', toNode.x);
+    line.setAttribute('y2', toNode.y);
+    line.classList.add('edge');
+    svg.appendChild(line);
+
+    // Draw weight label at midpoint
+    const midX = (fromNode.x + toNode.x) / 2;
+    const midY = (fromNode.y + toNode.y) / 2;
+    
+    // Create a background rectangle for the weight label
+    const bgRect = document.createElementNS("http://www.w3.org/2000/svg", 'rect');
+    bgRect.setAttribute('x', midX - 10);
+    bgRect.setAttribute('y', midY - 12);
+    bgRect.setAttribute('width', 20);
+    bgRect.setAttribute('height', 16);
+    bgRect.setAttribute('rx', 3);
+    bgRect.setAttribute('fill', 'white');
+    bgRect.setAttribute('stroke', '#e2e8f0');
+    svg.appendChild(bgRect);
+    
+    const weightLabel = document.createElementNS("http://www.w3.org/2000/svg", 'text');
+    weightLabel.setAttribute('x', midX);
+    weightLabel.setAttribute('y', midY - 2);
+    weightLabel.classList.add('weight-label');
+    weightLabel.textContent = edge.weight;
+    svg.appendChild(weightLabel);
+  });
+
+  // Draw nodes
+  nodes.forEach(node => {
+    const g = document.createElementNS("http://www.w3.org/2000/svg", 'g');
+    g.setAttribute('class', 'node');
+    g.setAttribute('data-id', node.id);
+    g.setAttribute('transform', `translate(${node.x}, ${node.y})`);
+
+    const circle = document.createElementNS("http://www.w3.org/2000/svg", 'circle');
+    circle.setAttribute('r', 20);
+    g.appendChild(circle);
+
+    const text = document.createElementNS("http://www.w3.org/2000/svg", 'text');
+    text.setAttribute('x', 0);
+    text.setAttribute('y', 5);
+    text.setAttribute('text-anchor', 'middle');
+    text.textContent = node.id;
+    g.appendChild(text);
+
+    // If this is A*, show heuristic h value under node
+    if(svgId === 'aStar-svg') {
+      const hBg = document.createElementNS("http://www.w3.org/2000/svg", 'rect');
+      hBg.setAttribute('x', -15);
+      hBg.setAttribute('y', 20);
+      hBg.setAttribute('width', 30);
+      hBg.setAttribute('height', 16);
+      hBg.setAttribute('rx', 8);
+      hBg.setAttribute('fill', '#f1f5f9');
+      g.appendChild(hBg);
+      
+      const hText = document.createElementNS("http://www.w3.org/2000/svg", 'text');
+      hText.setAttribute('x', 0);
+      hText.setAttribute('y', 32);
+      hText.setAttribute('text-anchor', 'middle');
+      hText.setAttribute('font-size', '10');
+      hText.setAttribute('fill', '#64748b');
+      hText.textContent = 'h=' + node.h;
+      g.appendChild(hText);
+    }
+
+    svg.appendChild(g);
+  });
+}
+
+// Priority Queue for UCS and A*
+class PriorityQueue {
+  constructor() {
+    this.elements = [];
+  }
+  isEmpty() {
+    return this.elements.length === 0;
+  }
+  enqueue(item, priority) {
+    this.elements.push({item, priority});
+    this.elements.sort((a,b) => a.priority - b.priority);
+  }
+  dequeue() {
+    return this.elements.shift().item;
+  }
+}
+
+// Graph adjacency list
+const adjacencyList = {};
+nodes.forEach(n => adjacencyList[n.id] = []);
+edges.forEach(e => {
+  adjacencyList[e.from].push({node: e.to, weight: e.weight});
+  adjacencyList[e.to].push({node: e.from, weight: e.weight}); // Assuming undirected graph for simplicity
+});
+
+// A* Search Algorithm with visualization step generator
+function* aStar(start, goal) {
+  const frontier = new PriorityQueue();
+  frontier.enqueue(start, 0);
+  const cameFrom = {};
+  const costSoFar = {};
+  cameFrom[start] = null;
+  costSoFar[start] = 0;
+  let nodesVisited = 0;
+
+  while(!frontier.isEmpty()) {
+    const current = frontier.dequeue();
+    nodesVisited++;
+    yield {current, cameFrom, costSoFar, nodesVisited};
+
+    if(current === goal) break;
+
+    for(const next of adjacencyList[current]) {
+      const newCost = costSoFar[current] + next.weight;
+      if(!(next.node in costSoFar) || newCost < costSoFar[next.node]) {
+        costSoFar[next.node] = newCost;
+        const priority = newCost + getNode(next.node).h;
+        frontier.enqueue(next.node, priority);
+        cameFrom[next.node] = current;
+      }
+    }
+  }
+  yield {current: goal, cameFrom, costSoFar, done: true, nodesVisited};
+}
+
+// Uniform Cost Search with visualization step generator
+function* uniformCostSearch(start, goal) {
+  const frontier = new PriorityQueue();
+  frontier.enqueue(start, 0);
+  const cameFrom = {};
+  const costSoFar = {};
+  cameFrom[start] = null;
+  costSoFar[start] = 0;
+  let nodesVisited = 0;
+
+  while(!frontier.isEmpty()) {
+    const current = frontier.dequeue();
+    nodesVisited++;
+    yield {current, cameFrom, costSoFar, nodesVisited};
+
+    if(current === goal) break;
+
+    for(const next of adjacencyList[current]) {
+      const newCost = costSoFar[current] + next.weight;
+      if(!(next.node in costSoFar) || newCost < costSoFar[next.node]) {
+        costSoFar[next.node] = newCost;
+        frontier.enqueue(next.node, newCost);
+        cameFrom[next.node] = current;
+      }
+    }
+  }
+  yield {current: goal, cameFrom, costSoFar, done: true, nodesVisited};
+}
+
+// Visualization Helpers
+function highlightNode(svg, nodeId, className) {
+  const nodes = svg.querySelectorAll('.node');
+  nodes.forEach(n => n.classList.remove('active-node', 'visited-node', 'final-path'));
+  if(nodeId) {
+    const target = Array.from(nodes).find(n => n.getAttribute('data-id') === nodeId);
+    if(target) target.classList.add(className);
+  }
+}
+
+function markVisited(svg, visitedNodes) {
+  const nodes = svg.querySelectorAll('.node');
+  nodes.forEach(n => n.classList.remove('visited-node'));
+  visitedNodes.forEach(id => {
+    const target = Array.from(nodes).find(n => n.getAttribute('data-id') === id);
+    if(target) target.classList.add('visited-node');
+  });
+}
+
+function drawFinalPath(svg, cameFrom, start, goal) {
+  // Clear old final paths
+  svg.querySelectorAll('.final-path').forEach(el => el.classList.remove('final-path'));
+  
+  let current = goal;
+  let totalCost = 0;
+  const pathNodes = [];
+  
+  while(current !== start && current != null) {
+    const from = cameFrom[current];
+    if(!from) break;
+    
+    // Highlight nodes
+    const currentNode = svg.querySelector(`.node[data-id="${current}"]`);
+    const fromNode = svg.querySelector(`.node[data-id="${from}"]`);
+    if(currentNode) {
+      currentNode.classList.add('final-path');
+      pathNodes.push(current);
+    }
+    if(fromNode) {
+      fromNode.classList.add('final-path');
+      pathNodes.push(from);
+    }
+
+    // Highlight edge as line
+    // Find the edge line between from and current
+    let line;
+    svg.querySelectorAll('line').forEach(l => {
+      const x1 = parseFloat(l.getAttribute('x1'));
+      const y1 = parseFloat(l.getAttribute('y1'));
+      const x2 = parseFloat(l.getAttribute('x2'));
+      const y2 = parseFloat(l.getAttribute('y2'));
+      const fromNodeData = getNode(from);
+      const currentNodeData = getNode(current);
+      if(
+        ( (x1 === fromNodeData.x && y1 === fromNodeData.y) && (x2 === currentNodeData.x && y2 === currentNodeData.y) ) ||
+        ( (x2 === fromNodeData.x && y2 === fromNodeData.y) && (x1 === currentNodeData.x && y1 === currentNodeData.y) )
+      ) {
+        line = l;
+        // Calculate the weight for this edge
+        const edge = edges.find(e => 
+          (e.from === from && e.to === current) || (e.to === from && e.from === current)
+        );
+        if(edge) totalCost += edge.weight;
+      }
+    });
+    if(line) line.classList.add('final-path');
+
+    current = from;
+  }
+  
+  return {totalCost, pathNodes: [...new Set(pathNodes)]};
+}
+
+// Update statistics display
+function updateStats(algorithm, stats) {
+  const prefix = algorithm === 'aStar' ? 'A*' : 'UCS';
+  if(stats.done) {
+    const pathInfo = drawFinalPath(document.getElementById(`${algorithm}-svg`), 
+      stats.cameFrom, config.startNode, config.goalNode);
+    document.getElementById(`${algorithm}-stats`).querySelector('p').textContent = pathInfo.totalCost;
+    document.getElementById(`${algorithm}-nodes`).querySelector('p').textContent = stats.nodesVisited;
+  } else {
+    document.getElementById(`${algorithm}-nodes`).querySelector('p').textContent = stats.nodesVisited;
+  }
+}
+
+// Main runner for animation
+async function animateTraversal(generatorFunc, svgId, algorithm) {
+  const svg = document.getElementById(svgId);
+  const gen = generatorFunc(config.startNode, config.goalNode);
+  let visited = new Set();
+  let stats = {};
+
+  for(let step of gen) {
+    highlightNode(svg, step.current, 'active-node');
+    visited.add(step.current);
+    markVisited(svg, Array.from(visited));
+    stats = step;
+    updateStats(algorithm, stats);
+    
+    if(step.done) {
+      drawFinalPath(svg, step.cameFrom, config.startNode, config.goalNode);
+      highlightNode(svg, null);
+      break;
+    }
+    await new Promise(r => setTimeout(r, config.animationSpeed));
+  }
+  
+  return stats;
+}
+
+// Reset visualization
+function resetVisualization() {
+  // Redraw graphs
+  drawGraph('aStar-svg');
+  drawGraph('ucs-svg');
+  
+  // Reset stats
+  document.querySelectorAll('.stat-card p').forEach(el => el.textContent = '0');
+  
+  // Enable start button
+  document.getElementById('startBtn').disabled = false;
+}
+
+// Initial Draw
+drawGraph('aStar-svg');
+drawGraph('ucs-svg');
+
+// Event Listeners
+document.getElementById('startBtn').addEventListener('click', async () => {
+  document.getElementById('startBtn').disabled = true;
+  document.getElementById('resetBtn').disabled = true;
+  
+  // Run animations side by side
+  const aStarPromise = animateTraversal(aStar, 'aStar-svg', 'aStar');
+  const ucsPromise = animateTraversal(uniformCostSearch, 'ucs-svg', 'ucs');
+  
+  await Promise.all([aStarPromise, ucsPromise]);
+  document.getElementById('resetBtn').disabled = false;
+});
+
+document.getElementById('resetBtn').addEventListener('click', resetVisualization);
+
+document.getElementById('speed').addEventListener('change', (e) => {
+  config.animationSpeed = parseInt(e.target.value);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Optimizing Prime Video Streaming with Floyd-Warshall Algorithm</title>
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+    
+    body, html {
+        height: 100%;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .container {
+        display: grid;
+        grid-template-columns: 280px 1fr 280px;
+        height: 100vh;
+        gap: 0;
+    }
+
+    .profile-sidebar, .toc-sidebar {
+        background: rgba(0, 0, 0, 0.3);
+        padding: 5rem 1.5rem;
+        overflow-y: auto;
+    }
+
+    .profile-sidebar {
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .profile-sidebar img {
+        border-radius: 50%;
+        width: 120px;
+        height: 120px;
+        object-fit: cover;
+        border: 3px solid #ffd500;
+        margin-bottom: 1rem;
+    }
+
+    .profile-sidebar h2 {
+        color: #fffbe0;
+        margin-bottom: 0.2rem;
+    }
+
+    .profile-sidebar p {
+        color: #ddd;
+        margin-bottom: 1.2rem;
+        font-size: 0.9rem;
+    }
+
+    .profile-links a {
+        display: inline-block;
+        margin: 0.3rem 0.8rem;
+        color: #ffd500;
+        font-weight: 600;
+        text-decoration: none;
+        transition: color 0.3s ease;
+    }
+    
+    .profile-links a:hover {
+        color: #fffbe0;
+    }
+
+    .content-area {
+        overflow-y: auto;
+        padding: 2rem 3rem;
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    h1, h2, h3, h4 {
+        color: #fffbe0;
+        margin-bottom: 1rem;
+    }
+
+    h1 {
+        font-size: 2.2rem;
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    p, ul {
+        margin-bottom: 1.2rem;
+        line-height: 1.6;
+    }
+
+    .code-block {
+        background-color: #1e1e2f;
+        color: #d4d4d4;
+        padding: 1rem;
+        border-radius: 8px;
+        overflow-x: auto;
+        font-family: 'Courier New', monospace;
+        white-space: pre-wrap;
+        animation: fadeIn 1s ease-in-out;
+        margin: 1rem 0;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .toc-sidebar h2 {
+        color: #fffbe0;
+        margin-bottom: 1rem;
+        font-size: 1.3rem;
+    }
+
+    .toc-sidebar a {
+        display: block;
+        color: #ffd500;
+        text-decoration: none;
+        margin: 0.6rem 0;
+        font-weight: 600;
+        transition: color 0.3s;
+    }
+
+    .toc-sidebar a:hover {
+        color: #fffbe0;
+    }
+
+    html {
+        scroll-behavior: smooth;
+    }
+
+    /* Visualization Styles */
+    #tree {
+        position: relative;
+        height: 400px;
+        margin: 2rem 0;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        padding: 20px;
+    }
+
+    .node {
+        background: #3498db;
+        color: white;
+        width: 60px;
+        height: 40px;
+        line-height: 40px;
+        text-align: center;
+        border-radius: 6px;
+        font-weight: bold;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        position: absolute;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+    .node.lazy {
+        background: #e67e22;
+        border: 2px solid #f39c12;
+    }
+
+    .node.range-highlight {
+        border: 3px solid #27ae60;
+        transform: scale(1.1);
+    }
+
+    button {
+        background: #2980b9;
+        color: white;
+        border: none;
+        padding: 0.8rem 1.5rem;
+        border-radius: 5px;
+        cursor: pointer;
+        margin: 0.5rem;
+        font-weight: 600;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        transition: background 0.3s ease;
+    }
+
+    button:hover:not(:disabled) {
+        background: #3498db;
+    }
+
+    button:disabled {
+        background: #7f8c8d;
+        cursor: not-allowed;
+    }
+
+    .controls {
+        text-align: center;
+        margin: 2rem 0;
+    }
+
+    #logs {
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 6px;
+        padding: 1rem;
+        height: 200px;
+        overflow-y: auto;
+        font-family: 'Courier New', monospace;
+        font-size: 0.9rem;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: #f8f9fa;
+    }
+
+    #legend {
+        margin-top: 2rem;
+        font-size: 0.9rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        align-items: center;
+    }
+
+    #legend span {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    #legend .node {
+        width: 20px;
+        height: 20px;
+        line-height: 20px;
+        font-size: 0.8rem;
+        position: static;
+    }
+
+    .output {
+        background: rgba(0, 0, 0, 0.3);
+        padding: 1rem;
+        border-radius: 6px;
+        border-left: 4px solid #ffd500;
+        font-family: 'Courier New', monospace;
+        margin: 1rem 0;
+    }
+
+    hr {
+        border: none;
+        border-top: 2px solid rgba(255, 213, 0, 0.5);
+        margin: 2rem 0;
+    }
+
+    #references {
+        margin-top: 3rem;
+        padding-top: 1rem;
+        border-top: 2px solid #ffd500;
+    }
+
+    #references h2 {
+        color: #ffd500;
+        margin-bottom: 1rem;
+    }
+
+    #references ul {
+        list-style-type: square;
+        padding-left: 1.5rem;
+        color: #ddd;
+        font-size: 0.9rem;
+    }
+
+    #references a {
+        color: #ffd500;
+        text-decoration: none;
+    }
+
+    #references a:hover {
+        color: #fffbe0;
+        text-decoration: underline;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 1200px) {
+        .container {
+            grid-template-columns: 1fr;
+            grid-template-rows: auto 1fr auto;
+        }
+        
+        .profile-sidebar, .toc-sidebar {
+            display: none;
+        }
+    }
+</style>
+</head>
+<body>
+<div class="container">
+    <!-- Left Profile Sidebar -->
+    <aside class="profile-sidebar" aria-label="Profile Sidebar">
+        <img src="https://avatars.githubusercontent.com/u/583231?v=4" alt="Profile Picture" />
+        <h2>Karthik K P</h2>
+        <p>Computer Science Engineer</p>
+        <p>kkarthikkp43@gmail.com</p>
+        <p><strong>📍 Location:</strong> Hubli, India</p>
+        <div class="profile-links">
+            <a href="https://github.com/karthikkp2004" target="_blank" rel="noopener noreferrer">GitHub</a>
+            <a href="https://www.linkedin.com/in/karthik-k-p-39684126a/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+        </div>
+    </aside>
+
+    <main class="content-area">
+        <h1>Optimizing Prime Video Streaming with Floyd-Warshall Algorithm</h1>
+
+        <section id="introduction">
+            <h2>1. Introduction</h2>
+            <p>Amazon Prime Video serves millions of users globally, requiring lightning-fast delivery of high-definition content across a vast and dynamic network of data centers, edge locations, and content delivery nodes. Ensuring minimal latency and uninterrupted playback is critical to providing a seamless viewing experience.</p>
+
+  <p>To achieve this, Prime Video can leverage the <span class="highlight">Floyd-Warshall algorithm</span>, a classical dynamic programming approach for finding <strong>shortest paths between all pairs of nodes</strong> in a weighted graph. This is particularly useful for precomputing the most efficient data transmission routes between content servers and end users.</p>
+
+  <p>In Prime Video’s context, each node represents an AWS CloudFront CDN location or an internal data center, and each edge weight corresponds to metrics like <span class="highlight">latency</span>, <span class="highlight">congestion</span>, or <span class="highlight">bandwidth cost</span>. By running Floyd-Warshall periodically or in real time, Prime Video can:</p>
+
+  <ul>
+    <li>Dynamically choose the lowest-latency path to serve video chunks.</li>
+    <li>Redirect traffic through optimal routes during regional outages.</li>
+    <li>Reduce buffering by minimizing overall data travel time.</li>
+    <li>Improve user Quality of Experience (QoE) during peak loads.</li>
+  </ul>
+
+  <p>This algorithmic backbone enables Prime Video to provide <strong>scalable</strong>, <strong>resilient</strong>, and <strong>optimized streaming services</strong>, even in a globally distributed environment with millions of concurrent viewers.</p>
+        </section>
+
+     
+
+
+        
+<hr>
+
+        <section id="code">
+            <h2>2. Code Implementation</h2>
+            <div class="code-block">
+#include <iostream>
+#include <vector>
+using namespace std;
+
+const int INF = 1e9;  // Large value representing no direct path
+
+// Floyd-Warshall Algorithm
+// Computes shortest paths between all pairs of nodes in the network graph
+void floydWarshall(vector<vector<int>>& latencyMatrix) {
+    int V = latencyMatrix.size();
+
+    for (int k = 0; k < V; ++k) {
+        for (int i = 0; i < V; ++i) {
+            for (int j = 0; j < V; ++j) {
+                if (latencyMatrix[i][k] + latencyMatrix[k][j] < latencyMatrix[i][j]) {
+                    latencyMatrix[i][j] = latencyMatrix[i][k] + latencyMatrix[k][j];
+                }
+            }
+        }
+    }
+}
+
+int main() {
+    // Number of nodes: Each node represents a CDN location or data center
+    int V = 5;
+
+    // Latency matrix: Edge weights represent latency in milliseconds
+    // INF means no direct link between nodes
+    vector<vector<int>> latencyMatrix = {
+        {0,    10,   INF, 30,   100},
+        {10,   0,    50,  INF,  INF},
+        {INF,  50,   0,   20,   10},
+        {30,   INF,  20,  0,    60},
+        {100,  INF,  10,  60,   0}
+    };
+
+    cout << "Initial Latency Matrix:\n";
+    for (const auto& row : latencyMatrix) {
+        for (int val : row) {
+            if (val == INF) cout << "INF ";
+            else cout << val << " ";
+        }
+        cout << "\n";
+    }
+
+    // Compute shortest paths
+    floydWarshall(latencyMatrix);
+
+    cout << "\nOptimized Latency Matrix (Shortest Paths):\n";
+    for (const auto& row : latencyMatrix) {
+        for (int val : row) {
+            if (val == INF) cout << "INF ";
+            else cout << val << " ";
+        }
+        cout << "\n";
+    }
+
+    return 0;
+}
+
+            </div>
+        </section>
+
+        <hr>
+
+        <h2>3.Architecture Overview</h2>
+
+        <section id="architecture-overview" style="padding: 8rem 2rem; max-width: 1200px; margin: 0 auto; font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #ffffff;">
+  <div style="max-width: 800px; margin: 0 auto 4rem; text-align: center;">
+    <h2 style="font-size: 2.75rem; font-weight: 800; color: #111827; margin-bottom: 1.5rem; line-height: 1.2; letter-spacing: -0.025em;">
+      Optimized Video Delivery Architecture
+    </h2>
+    <p style="font-size: 1.25rem; color: #4b5563; line-height: 1.6;">
+      How Prime Video leverages advanced pathfinding algorithms to deliver seamless streaming experiences
+    </p>
+  </div>
+
+  <div style="background: linear-gradient(to bottom, #f9fafb, #f3f4f6); border-radius: 1rem; box-shadow: 0 12px 24px rgba(0,0,0,0.05); padding: 4rem 2rem; position: relative; overflow: hidden;">
+    
+    <!-- Decorative background elements -->
+    <div style="position: absolute; top: 0; right: 0; width: 200px; height: 200px; background: radial-gradient(circle, rgba(37,99,235,0.08) 0%, rgba(37,99,235,0) 70%);"></div>
+    <div style="position: absolute; bottom: -50px; left: -50px; width: 300px; height: 300px; background: radial-gradient(circle, rgba(239,68,68,0.05) 0%, rgba(239,68,68,0) 70%);"></div>
+    
+    <!-- Architecture nodes container -->
+    <div style="display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 2;">
+      
+      <!-- Node 1: User Device -->
+      <div style="flex: 0 0 16%; text-align: center;">
+        <div style="background: #2563eb; color: white; border-radius: 0.75rem; padding: 2rem 1rem; font-weight: 700; font-size: 1.1rem; box-shadow: 0 8px 16px rgba(37, 99, 235, 0.15); transition: transform 0.2s;">
+          <div style="background: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 17H12.01M18 22H6C4.89543 22 4 21.1046 4 20V4C4 2.89543 4.89543 2 6 2H18C19.1046 2 20 2.89543 20 4V20C20 21.1046 19.1046 22 18 22Z" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          User Device
+          <div style="font-weight: 500; font-size: 0.85rem; opacity: 0.9; margin-top: 0.5rem;">Client Application</div>
+        </div>
+      </div>
+      
+      <!-- Node 2: CDN Edge -->
+      <div style="flex: 0 0 16%; text-align: center;">
+        <div style="background: #1d4ed8; color: white; border-radius: 0.75rem; padding: 2rem 1rem; font-weight: 700; font-size: 1.1rem; box-shadow: 0 8px 16px rgba(29, 78, 216, 0.15); transition: transform 0.2s;">
+          <div style="background: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="#1d4ed8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M2 17L12 22L22 17" stroke="#1d4ed8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M2 12L12 17L22 12" stroke="#1d4ed8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          CloudFront CDN
+          <div style="font-weight: 500; font-size: 0.85rem; opacity: 0.9; margin-top: 0.5rem;">Edge Location</div>
+          <div style="background: rgba(255,255,255,0.2); border-radius: 999px; padding: 0.25rem 0.5rem; font-size: 0.75rem; margin-top: 0.75rem; display: inline-block;">~50ms latency</div>
+        </div>
+      </div>
+      
+      <!-- Node 3: Data Center -->
+      <div style="flex: 0 0 16%; text-align: center;">
+        <div style="background: #1e40af; color: white; border-radius: 0.75rem; padding: 2rem 1rem; font-weight: 700; font-size: 1.1rem; box-shadow: 0 8px 16px rgba(30, 64, 175, 0.15); transition: transform 0.2s;">
+          <div style="background: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M5 12H19M5 12C3.89543 12 3 11.1046 3 10V6C3 4.89543 3.89543 4 5 4H19C20.1046 4 21 4.89543 21 6V10C21 11.1046 20.1046 12 19 12M5 12V18C5 19.1046 5.89543 20 7 20H17C18.1046 20 19 19.1046 19 18V12" stroke="#1e40af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          Data Center
+          <div style="font-weight: 500; font-size: 0.85rem; opacity: 0.9; margin-top: 0.5rem;">Content Storage</div>
+          <div style="background: rgba(255,255,255,0.2); border-radius: 999px; padding: 0.25rem 0.5rem; font-size: 0.75rem; margin-top: 0.75rem; display: inline-block;">PB-scale storage</div>
+        </div>
+      </div>
+      
+      <!-- Node 4: Algorithm -->
+      <div style="flex: 0 0 16%; text-align: center;">
+        <div style="background: #9333ea; color: white; border-radius: 0.75rem; padding: 2rem 1rem; font-weight: 700; font-size: 1.1rem; box-shadow: 0 8px 16px rgba(147, 51, 234, 0.15); transition: transform 0.2s;">
+          <div style="background: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M20 7L12 17L4 7" stroke="#9333ea" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          Path Optimization
+          <div style="font-weight: 500; font-size: 0.85rem; opacity: 0.9; margin-top: 0.5rem;">Floyd-Warshall</div>
+          <div style="background: rgba(255,255,255,0.2); border-radius: 999px; padding: 0.25rem 0.5rem; font-size: 0.75rem; margin-top: 0.75rem; display: inline-block;">O(n³) complexity</div>
+        </div>
+      </div>
+      
+      <!-- Node 5: Streaming Service -->
+      <div style="flex: 0 0 16%; text-align: center;">
+        <div style="background: #dc2626; color: white; border-radius: 0.75rem; padding: 2rem 1rem; font-weight: 700; font-size: 1.1rem; box-shadow: 0 8px 16px rgba(220, 38, 38, 0.15); transition: transform 0.2s;">
+          <div style="background: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M15 12L10 15V9L15 12Z" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          Streaming Service
+          <div style="font-weight: 500; font-size: 0.85rem; opacity: 0.9; margin-top: 0.5rem;">Video Delivery</div>
+          <div style="background: rgba(255,255,255,0.2); border-radius: 999px; padding: 0.25rem 0.5rem; font-size: 0.75rem; margin-top: 0.75rem; display: inline-block;">4K HDR</div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Connection arrows -->
+    <svg viewBox="0 0 1200 200" style="width: 100%; height: 100px; position: absolute; top: 50%; left: 0; transform: translateY(-50%); z-index: 1;">
+      <!-- Arrow 1 -->
+      <path d="M 120 100 C 240 40, 360 40, 480 100" fill="none" stroke="#2563eb" stroke-width="3" stroke-linecap="round" stroke-dasharray="0">
+        <animate attributeName="stroke-dasharray" values="0, 500; 500, 0" dur="1.5s" begin="0.5s" fill="freeze" />
+      </path>
+      <polygon points="480,100 470,90 470,110" fill="#2563eb" opacity="0">
+        <animate attributeName="opacity" values="0;1" dur="0.1s" begin="1.9s" fill="freeze" />
+      </polygon>
+      
+      <!-- Arrow 2 -->
+      <path d="M 600 100 C 720 40, 840 40, 960 100" fill="none" stroke="#2563eb" stroke-width="3" stroke-linecap="round" stroke-dasharray="0">
+        <animate attributeName="stroke-dasharray" values="0, 500; 500, 0" dur="1.5s" begin="1s" fill="freeze" />
+      </path>
+      <polygon points="960,100 950,90 950,110" fill="#2563eb" opacity="0">
+        <animate attributeName="opacity" values="0;1" dur="0.1s" begin="2.4s" fill="freeze" />
+      </polygon>
+      
+      <!-- Arrow 3 -->
+      <path d="M 1080 100 C 1200 40, 1320 40, 1440 100" fill="none" stroke="#2563eb" stroke-width="3" stroke-linecap="round" stroke-dasharray="0">
+        <animate attributeName="stroke-dasharray" values="0, 500; 500, 0" dur="1.5s" begin="1.5s" fill="freeze" />
+      </path>
+      <polygon points="1440,100 1430,90 1430,110" fill="#2563eb" opacity="0">
+        <animate attributeName="opacity" values="0;1" dur="0.1s" begin="2.9s" fill="freeze" />
+      </polygon>
+      
+      <!-- Final arrow (straight) -->
+      <line x1="1560" y1="100" x2="1680" y2="100" stroke="#dc2626" stroke-width="3" stroke-dasharray="0">
+        <animate attributeName="stroke-dasharray" values="0, 200; 200, 0" dur="1s" begin="2s" fill="freeze" />
+      </line>
+      <polygon points="1680,100 1670,90 1670,110" fill="#dc2626" opacity="0">
+        <animate attributeName="opacity" values="0;1" dur="0.1s" begin="3s" fill="freeze" />
+      </polygon>
+    </svg>
+  </div>
+
+  <div style="max-width: 800px; margin: 4rem auto 0; color: #4b5563; font-size: 1.125rem; line-height: 1.7; text-align: center;">
+    <p style="margin-bottom: 1.5rem;">
+      Prime Video's architecture employs the Floyd-Warshall algorithm to precompute optimal paths between all network nodes, enabling real-time selection of the lowest-latency routes for video delivery.
+    </p>
+    <div style="display: inline-flex; gap: 1rem; flex-wrap: wrap; justify-content: center;">
+      <span style="background: #f3f4f6; border-radius: 999px; padding: 0.5rem 1.25rem; font-size: 0.875rem; font-weight: 500; color: #374151; display: flex; align-items: center;">
+        <span style="display: inline-block; width: 8px; height: 8px; background: #2563eb; border-radius: 50%; margin-right: 0.5rem;"></span>
+        Global CDN Network
+      </span>
+      <span style="background: #f3f4f6; border-radius: 999px; padding: 0.5rem 1.25rem; font-size: 0.875rem; font-weight: 500; color: #374151; display: flex; align-items: center;">
+        <span style="display: inline-block; width: 8px; height: 8px; background: #9333ea; border-radius: 50%; margin-right: 0.5rem;"></span>
+        Dynamic Path Optimization
+      </span>
+      <span style="background: #f3f4f6; border-radius: 999px; padding: 0.5rem 1.25rem; font-size: 0.875rem; font-weight: 500; color: #374151; display: flex; align-items: center;">
+        <span style="display: inline-block; width: 8px; height: 8px; background: #dc2626; border-radius: 50%; margin-right: 0.5rem;"></span>
+        Adaptive Bitrate Streaming
+      </span>
+    </div>
+  </div>
+</section>
+<hr>
+
+        
+
+       
+
+        <section id="scenario">
+           
+  <h2>4.Real-Time Scenario: Amazon Prime Video Streaming Optimization with Floyd-Warshall Algorithm</h2>
+
+  <p>
+    Amazon Prime Video serves millions of users globally streaming high-definition videos simultaneously. These streams are delivered through a vast network of AWS data centers, CloudFront CDN edge locations, and internet backbone nodes.
+  </p>
+
+  <h2>How Floyd-Warshall Helps</h2>
+  <p>Prime Video models its entire delivery network as a graph:</p>
+  <ul>
+    <li><strong>Nodes:</strong> AWS data centers, CDN edge locations, regional caches, and internet gateways.</li>
+    <li><strong>Edges:</strong> Network links between these nodes weighted by current latency or congestion level.</li>
+  </ul>
+  <p>
+    The <strong>Floyd-Warshall algorithm</strong> runs periodically or triggered by network events to compute the shortest paths (minimum latency routes) between every pair of nodes in the network.
+  </p>
+
+  <h2>Step-by-Step Real-Time Use Case</h2>
+  <ol>
+    <li><strong>Initial State:</strong> Floyd-Warshall calculates baseline shortest paths between all nodes using average latency metrics.</li>
+    <li><strong>User Request:</strong> When a user in a specific region requests a video, Prime Video picks the closest edge CDN node using the precomputed shortest path, minimizing latency and buffering.</li>
+    <li><strong>Network Change (Congestion or Outage):</strong> Suppose a regional outage occurs, or a data link experiences congestion, causing latency to spike between two nodes.</li>
+    <li><strong>Latency Update & Recalculation:</strong> The network monitoring system detects this latency change and updates the graph’s edge weights in real time.</li>
+    <li><strong>Re-run Floyd-Warshall:</strong> The algorithm recomputes shortest paths considering the new latencies.</li>
+    <li><strong>Traffic Rerouting:</strong> Prime Video’s routing layer switches streaming traffic to the newly optimized paths avoiding the congested/outage link, ensuring uninterrupted playback.</li>
+    <li><strong>Continuous Monitoring:</strong> This process repeats continuously to dynamically adjust routes during peak times or failures.</li>
+  </ol>
+        </section>
+
+        <hr>
+
+        <section id="complexity">
+    <h2>5. Time and Space Complexity</h2>
+    <p><strong>Time Complexity:</strong></p>
+    <ul>
+        <li>Overall Algorithm: O(V³), where V is the number of nodes (servers, CDN locations, etc.)</li>
+        <li>This cubic complexity arises because the algorithm checks all pairs of nodes for each intermediate node.</li>
+    </ul>
+    <p><strong>Space Complexity:</strong></p>
+    <ul>
+        <li>O(V²) for storing the distance matrix representing shortest paths between every pair of nodes.</li>
+        <li>This matrix holds the shortest path costs and is updated during the algorithm's execution.</li>
+    </ul>
+</section>
+
+        <hr>
+
+        <h2>6.Benefits of Optimizing Prime Video Streaming Paths</h2>
+
+    </header>
+
+ 
+    <section id="Applications">
+      <ul>
+    <li><strong>Reduced Buffering:</strong> Video chunks travel via the fastest available routes, minimizing delays.</li>
+    <li><strong>Fault Tolerance:</strong> Streaming seamlessly shifts around network failures to maintain service continuity.</li>
+    <li><strong>Load Balancing:</strong> Traffic is distributed efficiently across multiple paths, preventing network bottlenecks.</li>
+    <li><strong>Consistent Quality:</strong> Maintains smooth playback with minimal interruptions for a better user experience.</li>
+  </ul>
+    </section>
+
+      <section id="references">
+    <h2>7. References</h2>
+    <ul>
+        <li>
+            <strong>Wikipedia - Floyd-Warshall Algorithm:</strong> 
+            <a href="https://en.wikipedia.org/wiki/Floyd%E2%80%93Warshall_algorithm" target="_blank">https://en.wikipedia.org/wiki/Floyd%E2%80%93Warshall_algorithm</a>
+        </li>
+        <li>
+            <strong>GeeksforGeeks - Floyd Warshall Algorithm:</strong> 
+            <a href="https://www.geeksforgeeks.org/floyd-warshall-algorithm-dp-16/" target="_blank">https://www.geeksforgeeks.org/floyd-warshall-algorithm-dp-16/</a>
+        </li>
+        
+        <li>
+            <strong>AWS CloudFront Documentation:</strong>
+            <a href="https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/Introduction.html" target="_blank">https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/Introduction.html</a>
+        </li>
+    </ul>
+</section>
+
+    </main>
+
+    <aside class="toc-sidebar">
+        <h2>Contents</h2>
+        <a href="#introduction">Introduction</a>
+        <a href="#code">Code Implementation</a>
+        <a href="#architecture-overview">Architecture Overview</a>
+        <a href="#scenario">Scenario</a>
+        <a href="#complexity">Complexity</a>
+         <a href="#Applications">Benefits of Optimizing Prime Video Streaming Paths</a>
+        <a href="#references">References</a>
+    </aside>
+</div>
+
+
+</body>
+</html>

@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Fraud Detection - Amazon Algo</title>
+<style>
+  /* Basic Reset */
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  body, html {
+    height: 100%;
+    font-family: 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+  }
+
+  /* Layout: 3 columns */
+  .container {
+    display: grid;
+    grid-template-columns: 280px 1fr 280px;
+    height: 100vh;
+  }
+
+  /* Left Sidebar - Profile */
+  .profile-sidebar {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 2rem 1.5rem;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .profile-sidebar img {
+    border-radius: 50%;
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+    border: 3px solid #ffd500;
+    margin-bottom: 1rem;
+  }
+
+  .profile-sidebar h2 {
+    color: #fffbe0;
+    margin-bottom: 0.2rem;
+  }
+
+  .profile-sidebar p {
+    color: #ddd;
+    margin-bottom: 1.2rem;
+    font-size: 0.9rem;
+  }
+
+  .profile-links a {
+    display: inline-block;
+    margin: 0.3rem 0.8rem;
+    color: #ffd500;
+    font-weight: 600;
+    text-decoration: none;
+    transition: color 0.3s ease;
+  }
+  .profile-links a:hover {
+    color: #fffbe0;
+  }
+
+  /* Center content area */
+  .content-area {
+    overflow-y: auto;
+    padding: 2rem 3rem;
+  }
+
+  h1, h2, h3 {
+    color: #fffbe0;
+    margin-bottom: 0.5rem;
+  }
+
+  p, ul {
+    margin-bottom: 1.2rem;
+  }
+
+  /* Code block styling */
+  .code-block {
+    background-color: #1e1e2f;
+    color: #d4d4d4;
+    padding: 1rem;
+    border-radius: 8px;
+    overflow-x: auto;
+    font-family: 'Courier New', monospace;
+    white-space: pre-wrap;
+    animation: fadeIn 1s ease-in-out;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Table styling */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: rgba(255, 255, 255, 0.05);
+    margin-top: 1rem;
+  }
+  th, td {
+    border: 1px solid #ffffff30;
+    padding: 0.75rem;
+    text-align: left;
+  }
+  th {
+    background-color: rgba(255, 255, 255, 0.2);
+  }
+
+  /* Right Sidebar - TOC */
+  .toc-sidebar {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 2rem 1.5rem;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+
+  .toc-sidebar h2 {
+    color: #fffbe0;
+    margin-bottom: 1rem;
+    font-size: 1.3rem;
+  }
+
+  .toc-sidebar a {
+    display: block;
+    color: #ffd500;
+    text-decoration: none;
+    margin: 0.6rem 0;
+    font-weight: 600;
+    transition: color 0.3s;
+  }
+  .toc-sidebar a:hover {
+    color: #fffbe0;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+
+  #references {
+  margin-top: 3rem;
+  padding-top: 1rem;
+  border-top: 2px solid #ffd500;
+}
+
+#references h2 {
+  color: #ffd500;
+  margin-bottom: 1rem;
+}
+
+#references ul {
+  list-style-type: square;
+  padding-left: 1.5rem;
+  color: #ddd;
+  font-size: 0.9rem;
+}
+
+
+</style>
+</head>
+<body>
+
+<div class="container">
+  <!-- Left Profile Sidebar -->
+  <aside class="profile-sidebar" aria-label="Profile Sidebar">
+    <img src="https://avatars.githubusercontent.com/u/583231?v=4" alt="Profile Picture" />
+    <h2>Karthik K P</h2>
+    <p>Computer Science Engineer</p>
+    <p>kkarthikkp43@gmail.com</p>
+    <p><strong>📍 Location:</strong> Hubli, India</p>
+    <div class="profile-links">
+      <a href="https://github.com/karthikkp2004" target="_blank" rel="noopener noreferrer">GitHub</a>
+      <a href="https://www.linkedin.com/in/karthik-k-p-39684126a/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+      
+    </div>
+  </aside>
+
+  <!-- Center Content -->
+  <main class="content-area" tabindex="0">
+    <section id="section1">
+      <h1>1. Fraud Detection Using Substring Algorithms</h1>
+      <p>This system detects fraud by identifying known patterns in user behavior using powerful string algorithms.</p>
+      <p>Fraud Detection is the process of identifying and preventing illegal or unauthorized activities that cause financial loss or harm. In platforms like Amazon, it involves analyzing transaction data to spot suspicious behaviors such as unusual purchase patterns, multiple accounts using the same payment method, or rapid refunds. Advanced algorithms and pattern matching techniques help detect these frauds in real-time, minimizing losses and protecting both customers and the business.</p>
+    </section>
+
+    <section id="section2">
+      <h2>2. Substring Algorithms</h2>
+      <ul>
+        <li>KMP – Finds recurring fraud sequences quickly.</li>
+        <li>Rabin-Karp – Matches many fraud signatures using hashes.</li>
+        <li>LCS – Compares sequences across fraudsters.</li>
+      </ul>
+    </section>
+
+    <section id="section3">
+      <h2>3. Code Example: KMP Algorithm</h2>
+      <div class="code-block" aria-label="Code example: KMP Algorithm">
+<pre>
+// C++ program to search the pattern in given text using
+// KMP Algorithm
+
+#include &lt;iostream&gt;
+#include &lt;string&gt;
+#include &lt;vector&gt;
+using namespace std;
+
+void constructLps(string &pat, vector<int> &lps) {
+
+    // len stores the length of longest prefix which
+    // is also a suffix for the previous index
+    int len = 0;
+
+    // lps[0] is always 0
+    lps[0] = 0;
+
+    int i = 1;
+    while (i < pat.length()) {
+
+        // If characters match, increment the size of lps
+        if (pat[i] == pat[len]) {
+            len++;
+            lps[i] = len;
+            i++;
+        }
+
+        // If there is a mismatch
+        else {
+            if (len != 0) {
+
+                // Update len to the previous lps value
+                // to avoid reduntant comparisons
+                len = lps[len - 1];
+            }
+            else {
+
+                // If no matching prefix found, set lps[i] to 0
+                lps[i] = 0;
+                i++;
+            }
+        }
+    }
+}
+
+vector<int> search(string &pat, string &txt) {
+    int n = txt.length();
+    int m = pat.length();
+
+    vector<int> lps(m);
+    vector<int> res;
+
+    constructLps(pat, lps);
+
+    // Pointers i and j, for traversing
+    // the text and pattern
+    int i = 0;
+    int j = 0;
+
+    while (i < n) {
+
+        // If characters match, move both pointers forward
+        if (txt[i] == pat[j]) {
+            i++;
+            j++;
+
+            // If the entire pattern is matched
+            // store the start index in result
+            if (j == m) {
+                res.push_back(i - j);
+
+                // Use LPS of previous index to
+                // skip unnecessary comparisons
+                j = lps[j - 1];
+            }
+        }
+
+        // If there is a mismatch
+        else {
+
+            // Use lps value of previous index
+            // to avoid redundant comparisons
+            if (j != 0)
+                j = lps[j - 1];
+            else
+                i++;
+        }
+    }
+    return res;
+}
+
+int main() {
+    string txt = "aabaacaadaabaaba";
+    string pat = "aaba";
+
+    vector<int> res = search(pat, txt);
+    for (int i = 0; i < res.size(); i++)
+        cout << res[i] << " ";
+
+    return 0;
+}
+</pre>
+      </div>
+
+      <section id="kmp-step-anim">
+  <h2>🔍 Step-by-Step KMP Animation</h2>
+  <div class="code-block">
+    <p><strong>Text:</strong> <span id="text-line"></span></p>
+    <p><strong>Pattern:</strong> <span id="pattern-line"></span></p>
+    <p><strong>LPS Array:</strong> <span id="lps-array"></span></p>
+    <p><strong>i:</strong> <span id="i-val">0</span> &nbsp;&nbsp; <strong>j:</strong> <span id="j-val">0</span></p>
+    <p id="kmp-log" style="margin-top:1em;"></p>
+    <button onclick="nextKmpStep()">⏭ Next Step</button>
+  </div>
+</section>
+    </section>
+
+    <section id="section4">
+      <h2>4. Time & Space Complexity</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Algorithm</th>
+            <th>Time</th>
+            <th>Space</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>KMP</td>
+            <td>O(n + m)</td>
+            <td>O(m)</td>
+          </tr>
+          <tr>
+            <td>Rabin-Karp</td>
+            <td>O(n + m)</td>
+            <td>O(1)</td>
+          </tr>
+          <tr>
+            <td>LCS (DP)</td>
+            <td>O(n × m)</td>
+            <td>O(n × m)</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="section5">
+      <h2>5. Machine Learning Integration</h2>
+      <ul>
+        <li>Extracted substrings used as input features.</li>
+        <li>Train models to flag fraud combinations.</li>
+        <li>Supports Random Forest, XGBoost, LSTM.</li>
+      </ul>
+    </section>
+
+    <section id="section6">
+  <h2>6. 🧾 Example Scenario in Amazon</h2>
+  <p>Let’s say we have known fraud patterns like:</p>
+  <ul>
+    <li>Multiple small purchases followed by a big one in seconds.</li>
+    <li>A series of refunds from the same device/IP.</li>
+    <li>Buying the same item repeatedly with different cards.</li>
+    <li>Shipping to many addresses from one account in minutes.</li>
+  </ul>
+
+  <h3>Step-by-Step:</h3>
+  <h4>Input Data:</h4>
+  <p>Transaction logs with:</p>
+  <ul>
+    <li>User ID</li>
+    <li>Product ID</li>
+    <li>Time</li>
+    <li>Location</li>
+    <li>Payment Method</li>
+  </ul>
+
+  <h4>Known Patterns (like substrings):</h4>
+  <div class="code-block" aria-label="Known patterns examples">
+<pre>
+"itemA → refund → itemA → refund → itemA"
+"cardX → cardY → cardX → same address"
+</pre>
+  </div>
+
+  <h4>Run Substring Search:</h4>
+  <ul>
+    <li>Use Rabin-Karp to match known suspicious sequences in real-time transaction streams.</li>
+    <li>Use KMP if patterns are fixed and need fast lookups.</li>
+    <li>If comparing longer histories, use Suffix Trees or Automata to find similar sequences.</li>
+  </ul>
+
+  <h4>Pattern Matching:</h4>
+  <p>If a user’s recent transaction sequence matches a known fraud pattern with high similarity (say &gt;90% with LCS), flag for review.</p>
+
+  <h4>Trigger Alert:</h4>
+  <p>Raise an alert or automatically block/suspend the account for verification.</p>
+
+  <h3>🔍 Why This Works Well at Amazon Scale:</h3>
+  <ul>
+    <li>Amazon has millions of daily transactions.</li>
+    <li>Algorithms like Rabin-Karp offer O(n) average-case complexity for real-time matching.</li>
+    <li>Pattern recognition avoids false positives from generic rule-based systems.</li>
+  </ul>
+</section>
+
+
+    <section id="section7">
+      <h2>7. Applications at Amazon</h2>
+      <ul>
+        <li>📦 Detect fraudulent orders or bot activity.</li>
+        <li>💳 Identify promo abuse using behavior patterns.</li>
+        <li>🧠 Improve fraud detection ML systems.</li>
+      </ul>
+    </section>
+
+
+
+  
+    <section id="references"><h2>8. References</h2>
+  <ul>
+    <li>
+      <strong>GeeksforGeeks – KMP Algorithm for Pattern Searching:</strong>
+      <a href="https://www.geeksforgeeks.org/kmp-algorithm-for-pattern-searching/" target="_blank" style="color: #ffd500;">
+        https://www.geeksforgeeks.org/kmp-algorithm-for-pattern-searching/
+      </a>
+    </li>
+    <li>
+      <strong>Wikipedia – Knuth–Morris–Pratt Algorithm:</strong>
+      <a href="https://en.wikipedia.org/wiki/Knuth–Morris–Pratt_algorithm" target="_blank" style="color: #ffd500;">
+        https://en.wikipedia.org/wiki/Knuth–Morris–Pratt_algorithm
+      </a>
+    </li>
+  </ul>
+
+ 
+  <p>
+    D. E. Knuth, J. H. Morris Jr., and V. R. Pratt, <em>"Fast pattern matching in strings"</em>,
+    SIAM Journal on Computing, 6(2):323–350, 1977. DOI:
+    <a href="https://doi.org/10.1137/0206024" target="_blank" style="color: #ffd500;">
+      10.1137/0206024
+    </a>
+  </p>
+</section>
+
+
+  </main>
+
+  <!-- Right TOC Sidebar -->
+  <nav class="toc-sidebar" aria-label="Table of Contents">
+    <h2>📘 Contents</h2>
+    <a href="#section1">1. Fraud Detection</a>
+    <a href="#section2">2. Substring Algorithms</a>
+    <a href="#section3">3. Code Example</a>
+    <a href="#section4">4. Time & Space Complexity</a>
+    <a href="#section5">5. ML Integration</a>
+    <a href="#section6">6. Example Scenario</a>
+
+    <a href="#section7">7. Amazon Applications</a>
+     <a href="#references">8. References</a>
+
+  </nav>
+</div>
+
+
+
+
+
+
+</body>
+
+
+<script>
+const kmpText = "aabaacaadaabaaba";
+const kmpPattern = "aaba";
+let lps = Array(kmpPattern.length).fill(0);
+let step = 0;
+let i = 1, len = 0;
+let matching = false;
+let ti = 0, pj = 0;
+let matches = [];
+
+function displayState(message = "") {
+  const textLine = kmpText.split("").map((c, idx) =>
+    idx === ti ? `<span style="color:yellow;font-weight:bold">${c}</span>` : c).join("");
+  const patternLine = Array(ti - pj).fill("&nbsp;").join("") +
+    kmpPattern.split("").map((c, idx) =>
+      idx === pj ? `<span style="color:lightgreen;font-weight:bold">${c}</span>` : c).join("");
+  document.getElementById("text-line").innerHTML = textLine;
+  document.getElementById("pattern-line").innerHTML = patternLine;
+  document.getElementById("lps-array").innerHTML = `[${lps.join(", ")}]`;
+  document.getElementById("i-val").innerText = matching ? ti : i;
+  document.getElementById("j-val").innerText = matching ? pj : len;
+  document.getElementById("kmp-log").innerHTML = message;
+}
+
+function nextKmpStep() {
+  if (!matching) {
+    if (i < kmpPattern.length) {
+      if (kmpPattern[i] === kmpPattern[len]) {
+        len++;
+        lps[i] = len;
+        displayState(`Pattern[${i}] == Pattern[${len - 1}] → lps[${i}] = ${len}`);
+        i++;
+      } else {
+        if (len !== 0) {
+          len = lps[len - 1];
+          displayState(`Mismatch. Reset len to lps[${len}]`);
+        } else {
+          lps[i] = 0;
+          displayState(`Mismatch and len = 0 → lps[${i}] = 0`);
+          i++;
+        }
+      }
+    } else {
+      matching = true;
+      ti = 0; pj = 0;
+      displayState("✅ LPS complete. Starting pattern matching...");
+    }
+  } else {
+    if (ti < kmpText.length) {
+      if (kmpPattern[pj] === kmpText[ti]) {
+        displayState(`Pattern[${pj}] == Text[${ti}] → continue`);
+        ti++; pj++;
+        if (pj === kmpPattern.length) {
+          matches.push(ti - pj);
+          displayState(`🎯 Pattern found at index ${ti - pj}`);
+          pj = lps[pj - 1];
+        }
+      } else {
+        if (pj !== 0) {
+          displayState(`Mismatch → j = lps[${pj - 1}]`);
+          pj = lps[pj - 1];
+        } else {
+          displayState(`Mismatch and j = 0 → move i`);
+          ti++;
+        }
+      }
+    } else {
+      displayState(`✅ Matching done. Pattern found at: ${matches.join(", ") || "None"}`);
+    }
+  }
+}
+</script>
+
+
+</html>

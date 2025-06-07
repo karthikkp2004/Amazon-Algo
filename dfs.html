@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Urban Delivery Clusters in Amazon</title>
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+    
+    body, html {
+        height: 100%;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .container {
+        display: grid;
+        grid-template-columns: 280px 1fr 280px;
+        height: 100vh;
+        gap: 0;
+    }
+
+    .profile-sidebar, .toc-sidebar {
+        background: rgba(0, 0, 0, 0.3);
+        padding: 2rem 1.5rem;
+        overflow-y: auto;
+    }
+
+    .profile-sidebar {
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .profile-sidebar img {
+        border-radius: 50%;
+        width: 120px;
+        height: 120px;
+        object-fit: cover;
+        border: 3px solid #ffd500;
+        margin-bottom: 1rem;
+    }
+
+    .profile-sidebar h2 {
+        color: #fffbe0;
+        margin-bottom: 0.2rem;
+    }
+
+    .profile-sidebar p {
+        color: #ddd;
+        margin-bottom: 1.2rem;
+        font-size: 0.9rem;
+    }
+
+    .profile-links a {
+        display: inline-block;
+        margin: 0.3rem 0.8rem;
+        color: #ffd500;
+        font-weight: 600;
+        text-decoration: none;
+        transition: color 0.3s ease;
+    }
+    
+    .profile-links a:hover {
+        color: #fffbe0;
+    }
+
+    .content-area {
+        overflow-y: auto;
+        padding: 2rem 3rem;
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    h1, h2, h3, h4 {
+        color: #fffbe0;
+        margin-bottom: 1rem;
+    }
+
+    h1 {
+        font-size: 2.2rem;
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    p, ul {
+        margin-bottom: 1.2rem;
+        line-height: 1.6;
+    }
+
+    .code-block {
+        background-color: #1e1e2f;
+        color: #d4d4d4;
+        padding: 1rem;
+        border-radius: 8px;
+        overflow-x: auto;
+        font-family: 'Courier New', monospace;
+        white-space: pre-wrap;
+        animation: fadeIn 1s ease-in-out;
+        margin: 1rem 0;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .toc-sidebar h2 {
+        color: #fffbe0;
+        margin-bottom: 1rem;
+        font-size: 1.3rem;
+    }
+
+    .toc-sidebar a {
+        display: block;
+        color: #ffd500;
+        text-decoration: none;
+        margin: 0.6rem 0;
+        font-weight: 600;
+        transition: color 0.3s;
+    }
+
+    .toc-sidebar a:hover {
+        color: #fffbe0;
+    }
+
+    html {
+        scroll-behavior: smooth;
+    }
+
+    /* Visualization Styles */
+    #grid {
+        position: relative;
+        height: 400px;
+        margin: 2rem 0;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        padding: 20px;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 2px;
+    }
+
+    .cell {
+        width: 100%;
+        height: 40px;
+        display: inline-block;
+        border: 1px solid #fff;
+        text-align: center;
+        line-height: 40px;
+        font-weight: bold;
+        transition: background 0.3s ease;
+    }
+
+    .high-demand {
+        background: #e74c3c; /* Red for high demand */
+    }
+
+    .low-demand {
+        background: #2ecc71; /* Green for low demand */
+    }
+
+    .cluster-highlight {
+        background: rgba(255, 215, 0, 0.7); /* Yellow for highlighted clusters */
+    }
+
+    button {
+        background: #2980b9;
+        color: white;
+        border: none;
+        padding: 0.8rem 1.5rem;
+        border-radius: 5px;
+        cursor: pointer;
+        margin: 0.5rem;
+        font-weight: 600;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        transition: background 0.3s ease;
+    }
+
+    button:hover:not(:disabled) {
+        background: #3498db;
+    }
+
+    button:disabled {
+        background: #7f8c8d;
+        cursor: not-allowed;
+    }
+
+    .controls {
+        text-align: center;
+        margin: 2rem 0;
+    }
+
+    #logs {
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 6px;
+        padding: 1rem;
+        height: 200px;
+        overflow-y: auto;
+        font-family: 'Courier New', monospace;
+        font-size: 0.9rem;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: #f8f9fa;
+    }
+
+    .output {
+        background: rgba(0, 0, 0, 0.3);
+        padding: 1rem;
+        border-radius: 6px;
+        border-left: 4px solid #ffd500;
+        font-family: 'Courier New', monospace;
+        margin: 1rem 0;
+    }
+
+    hr {
+        border: none;
+        border-top: 2px solid rgba(255, 213, 0, 0.5);
+        margin: 2rem 0;
+    }
+
+    #references {
+        margin-top: 3rem;
+        padding-top: 1rem;
+        border-top: 2px solid #ffd500;
+    }
+
+    #references h2 {
+        color: #ffd500;
+        margin-bottom: 1rem;
+    }
+
+    #references ul {
+        list-style-type: square;
+        padding-left: 1.5rem;
+        color: #ddd;
+        font-size: 0.9rem;
+    }
+
+    #references a {
+        color: #ffd500;
+        text-decoration: none;
+    }
+
+    #references a:hover {
+        color: #fffbe0;
+        text-decoration: underline;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 1200px) {
+        .container {
+            grid-template-columns: 1fr;
+            grid-template-rows: auto 1fr auto;
+        }
+        
+        .profile-sidebar, .toc-sidebar {
+            display: none;
+        }
+    }
+</style>
+</head>
+<body>
+<div class="container">
+    <!-- Left Profile Sidebar -->
+    <aside class="profile-sidebar" aria-label="Profile Sidebar">
+        <img src="https://avatars.githubusercontent.com/u/583231?v=4" alt="Profile Picture" />
+        <h2>Karthik K P</h2>
+        <p>Computer Science Engineer</p>
+        <p>kkarthikkp43@gmail.com</p>
+        <p><strong>📍 Location:</strong> Hubli, India</p>
+        <div class="profile-links">
+            <a href="https://github.com/karthikkp2004" target="_blank" rel="noopener noreferrer">GitHub</a>
+            <a href="https://www.linkedin.com/in/karthik-k-p-39684126a/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+        </div>
+    </aside>
+
+    <main class="content-area">
+        <h1>Urban Delivery Clusters in Amazon</h1>
+
+        <section id="introduction">
+            <h2>1. Problem Statement</h2>
+            <p>
+                In dense urban areas, Amazon must deliver thousands of packages daily. Some areas see very high demand, and trucks often have overlapping routes, causing:
+            </p>
+            <ul>
+                <li>🚛 Wasted fuel</li>
+                <li>⏳ Longer delivery times</li>
+                <li>📦 Inefficient resource allocation</li>
+            </ul>
+            <p>
+                Amazon wants to find connected clusters (zones) of high demand — so they can assign one vehicle per zone, with minimum travel overlap.
+            </p>
+        </section>
+
+        <hr>
+
+        <section id="algorithm">
+            <h2>2. Algorithm Behind the Optimization</h2>
+            <p>
+                🔍 Model the City as a Grid (Matrix). Imagine a city map as a 2D grid like:
+            </p>
+            <div class="code-block">
+[
+  [1, 1, 0, 0],
+  [1, 0, 0, 1],
+  [0, 0, 1, 1],
+  [0, 1, 1, 1]
+]
+            </div>
+            <p>Each cell = 1 km²</p>
+            <ul>
+                <li>1 → High-demand delivery zone (e.g., >50 orders)</li>
+                <li>0 → Low or no delivery</li>
+            </ul>
+            <h3>Goal</h3>
+            <p>Find maximum connected components of 1s in the grid (using DFS or BFS). Each connected cluster forms a delivery route for a single truck.</p>
+        </section>
+
+        <hr>
+
+        <section id="why-dfs-bfs">
+            <h2>3. Applications of DFS/BFS</h2>
+            <p>These algorithms are perfect for connected component detection in a 2D grid (up/down/left/right neighbors). They help:</p>
+            <ul>
+                <li>Count clusters</li>
+                <li>Find size of largest delivery zone</li>
+                <li>Optimize truck allocation</li>
+            </ul>
+        </section>
+
+        <hr>
+
+        <section id="execution">
+            <h2>4. Step-by-Step Execution</h2>
+            <p>Example Grid:</p>
+            <div class="code-block">
+[
+  [1, 1, 0],
+  [1, 0, 0],
+  [0, 0, 1]
+]
+            </div>
+            <h3>Step 1: Traverse Each Cell</h3>
+            <p>Start at (0,0) → It's a 1 → Start DFS.</p>
+            <p>Visit (0,1), then (1,0) — mark all visited. This forms one cluster of size 3.</p>
+            <h3>Step 2: Continue Scanning</h3>
+            <p>At (2,2) → Another 1 → new cluster of size 1.</p>
+            <h3>Result:</h3>
+            <div class="output">
+Total clusters: 2<br>
+Max cluster: 3
+            </div>
+        </section>
+
+        <hr>
+
+        <section id="cpp-logic">
+            <h2>5. C++ Logic (Simplified)</h2>
+            <div class="code-block">
+void dfs(vector<vector<int>>& grid, int i, int j) {
+    if(i<0 || j<0 || i>=grid.size() || j>=grid[0].size() || grid[i][j] == 0) return;
+    grid[i][j] = 0; // mark as visited
+    dfs(grid, i+1, j); dfs(grid, i-1, j);
+    dfs(grid, i, j+1); dfs(grid, i, j-1);
+}
+
+int numClusters(vector<vector<int>>& grid) {
+    int clusters = 0;
+    for(int i=0; i<grid.size(); i++) {
+        for(int j=0; j<grid[0].size(); j++) {
+            if(grid[i][j] == 1) {
+                dfs(grid, i, j);
+                clusters++;
+            }
+        }
+    }
+    return clusters;
+}
+            </div>
+        </section>
+
+        <hr>
+
+       <section id="impact" >
+  <h2 >6. Real-time Impact for Amazon</h2>
+  <table style="width: 100%; border-collapse: collapse; text-align: left; background: transparent;">
+    <thead>
+      <tr style="background-color: #0984e3; color: #f0f0f0;">
+        <th style="padding: 10px; border-bottom: 2px solid #74b9ff;">📌 Metric</th>
+        <th style="padding: 10px; border-bottom: 2px solid #74b9ff;">💡 Optimized Using Grid DFS</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr style="background-color: #2d3436;">
+        <td style="padding: 10px; border-bottom: 1px solid #636e72;">Delivery Zones</td>
+        <td style="padding: 10px; border-bottom: 1px solid #636e72;">Dynamically detected clusters</td>
+      </tr>
+      <tr style="background-color: #353b48;">
+        <td style="padding: 10px; border-bottom: 1px solid #636e72;">Vehicle Usage</td>
+        <td style="padding: 10px; border-bottom: 1px solid #636e72;">One per high-density island</td>
+      </tr>
+      <tr style="background-color: #2d3436;">
+        <td style="padding: 10px; border-bottom: 1px solid #636e72;">Fuel and Time Savings</td>
+        <td style="padding: 10px; border-bottom: 1px solid #636e72;">Fewer route overlaps</td>
+      </tr>
+      <tr style="background-color: #353b48;">
+        <td style="padding: 10px;">Customer Satisfaction</td>
+        <td style="padding: 10px;">Faster, grouped deliveries</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+
+        <hr>
+
+        <section id="visualization">
+            <h2>7. Visualization Idea</h2>
+            <p>Imagine a city heatmap grid:</p>
+            <ul>
+                <li>Cells glow red where demand > 50</li>
+                <li>DFS highlights clusters</li>
+                <li>Each truck icon is assigned per cluster</li>
+            </ul>
+              <h2>Amazon Delivery Zone Clustering - Step-by-Step Animation</h2>
+  <div id="grid"></div>
+  <button onclick="findClusters()">Detect Clusters</button>
+  <div id="logs"></div>
+        </section>
+
+        <hr>
+<section id="complexity" >
+  <h2 >7. Efficiency Analysis: Time and Space Complexity</h2>
+  
+  <div style="margin-bottom: 16px;">
+    <h3 >Time Complexity</h3>
+    <p>
+      <strong>O(N × M)</strong> — Each cell in the grid (with N rows and M columns) is visited once during the DFS traversal. 
+      The algorithm explores connected cells of clusters efficiently without revisiting any marked cells.
+    </p>
+  </div>
+  
+  <div style="margin-bottom: 16px;">
+    <h3>Space Complexity</h3>
+    <p>
+      <strong>O(N × M)</strong> — This is due to the <code>visited</code> array that tracks whether each cell has been processed. 
+      Additionally, the recursion stack in DFS can grow up to the size of the largest cluster in the worst case.
+    </p>
+  </div>
+  
+  
+</section>
+
+ 
+
+
+
+
+
+        <section id="references">
+            <h2>9. References</h2>
+            <ul>
+                <li>
+                    <strong>Amazon Delivery Optimization:</strong> 
+                    <a href="https://www.amazon.com" target="_blank">https://www.amazon.com</a>
+                </li>
+                <li>
+                    <strong>GeeksforGeeks - Connected Components:</strong>
+                    <a href="https://www.geeksforgeeks.org/connected-components-in-an-undirected-graph/" target="_blank">https://www.geeksforgeeks.org/connected-components-in-an-undirected-graph/</a>
+                </li>
+                <li>
+                    <strong>DFS and BFS Algorithms:</strong>
+                    <a href="https://www.geeksforgeeks.org/depth-first-search-or-dfs-for-a-graph/" target="_blank">https://www.geeksforgeeks.org/depth-first-search-or-dfs-for-a-graph/</a>
+                </li>
+            </ul>
+        </section>
+    </main>
+
+    <aside class="toc-sidebar">
+        <h2>Contents</h2>
+        <a href="#introduction">Introduction</a>
+        <a href="#algorithm">Algorithm</a>
+        <a href="#why-dfs-bfs">Applications</a>
+        <a href="#execution">Step-by-Step Execution</a>
+        <a href="#cpp-logic">C++ Logic</a>
+        <a href="#impact">Real-time Impact</a>
+        <a href="#visualization">Visualization Idea</a>
+        <a href="#complexity">Efficiency Analysis</a>
+        <a href="#references">References</a>
+    </aside>
+</div>
+
+<script>
+    // Initial grid
+    const grid = [
+      [1, 1, 0],
+      [1, 0, 0],
+      [0, 0, 1]
+    ];
+
+    // Render grid
+    function drawGrid() {
+      const gridContainer = document.getElementById('grid');
+      gridContainer.innerHTML = '';
+      grid.forEach((row, i) => {
+        row.forEach((cell, j) => {
+          const div = document.createElement('div');
+          div.className = 'cell ' + (cell === 1 ? 'high-demand' : 'low-demand');
+          div.id = `cell-${i}-${j}`;
+          div.textContent = cell;
+          gridContainer.appendChild(div);
+        });
+      });
+    }
+
+    // Sleep helper to pause for animation steps
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    // Animated DFS traversal
+    async function dfs(i, j, visited, clusterCells) {
+      // Boundary and visited check
+      if (
+        i < 0 || j < 0 ||
+        i >= grid.length || j >= grid[0].length ||
+        grid[i][j] === 0 || visited[i][j]
+      ) {
+        return 0;
+      }
+
+      visited[i][j] = true;
+      clusterCells.push([i, j]);
+
+      // Mark as visiting (yellow)
+      const cellDiv = document.getElementById(`cell-${i}-${j}`);
+      if (cellDiv) {
+        cellDiv.classList.add('visiting');
+        await sleep(500); // pause to show visiting
+      }
+
+      let size = 1;
+
+      // Explore neighbors with animation
+      size += await dfs(i + 1, j, visited, clusterCells);
+      size += await dfs(i - 1, j, visited, clusterCells);
+      size += await dfs(i, j + 1, visited, clusterCells);
+      size += await dfs(i, j - 1, visited, clusterCells);
+
+      // After exploring neighbors, mark as part of cluster (green)
+      if (cellDiv) {
+        cellDiv.classList.remove('visiting');
+        cellDiv.classList.add('highlight');
+      }
+      await sleep(300); // small pause to finalize
+
+      return size;
+    }
+
+    // Find all clusters with animation
+    async function findClusters() {
+      drawGrid(); // Reset visual state
+      const visited = Array.from({ length: grid.length }, () => Array(grid[0].length).fill(false));
+      const logs = document.getElementById('logs');
+      logs.innerHTML = '';
+      let totalClusters = 0;
+      let maxClusterSize = 0;
+
+      for (let i = 0; i < grid.length; i++) {
+        for (let j = 0; j < grid[0].length; j++) {
+          if (grid[i][j] === 1 && !visited[i][j]) {
+            logs.innerHTML += `🔎 Starting new cluster from cell (${i},${j})...<br>`;
+            await sleep(500);
+            const clusterCells = [];
+            const clusterSize = await dfs(i, j, visited, clusterCells);
+            totalClusters++;
+            maxClusterSize = Math.max(maxClusterSize, clusterSize);
+            logs.innerHTML += `✅ Found cluster of size ${clusterSize}<br><br>`;
+            await sleep(500);
+          }
+        }
+      }
+
+      logs.innerHTML += `<hr>Total clusters: <strong>${totalClusters}</strong><br>`;
+      logs.innerHTML += `Largest cluster size: <strong>${maxClusterSize}</strong>`;
+    }
+
+    // Initial render
+    drawGrid();
+  </script>
+
+  </body>
+</html>

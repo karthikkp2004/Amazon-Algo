@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Stable Product-Promotion Matching</title>
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+    
+    body, html {
+        height: 100%;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .container {
+        display: grid;
+        grid-template-columns: 280px 1fr 280px;
+        height: 100vh;
+        gap: 0;
+    }
+
+    .profile-sidebar, .toc-sidebar {
+        background: rgba(0, 0, 0, 0.3);
+        padding: 5rem 1.5rem;
+        overflow-y: auto;
+    }
+
+    .profile-sidebar {
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .profile-sidebar img {
+        border-radius: 50%;
+        width: 120px;
+        height: 120px;
+        object-fit: cover;
+        border: 3px solid #ffd500;
+        margin-bottom: 1rem;
+    }
+
+    .profile-sidebar h2 {
+        color: #fffbe0;
+        margin-bottom: 0.2rem;
+    }
+
+    .profile-sidebar p {
+        color: #ddd;
+        margin-bottom: 1.2rem;
+        font-size: 0.9rem;
+    }
+
+    .profile-links a {
+        display: inline-block;
+        margin: 0.3rem 0.8rem;
+        color: #ffd500;
+        font-weight: 600;
+        text-decoration: none;
+        transition: color 0.3s ease;
+    }
+    
+    .profile-links a:hover {
+        color: #fffbe0;
+    }
+
+    .content-area {
+        overflow-y: auto;
+        padding: 2rem 3rem;
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    h1, h2, h3, h4 {
+        color: #fffbe0;
+        margin-bottom: 1rem;
+    }
+
+    h1 {
+        font-size: 2.2rem;
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    p, ul {
+        margin-bottom: 1.2rem;
+        line-height: 1.6;
+    }
+
+    .code-block {
+        background-color: #1e1e2f;
+        color: #d4d4d4;
+        padding: 1rem;
+        border-radius: 8px;
+        overflow-x: auto;
+        font-family: 'Courier New', monospace;
+        white-space: pre-wrap;
+        animation: fadeIn 1s ease-in-out;
+        margin: 1rem 0;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .toc-sidebar h2 {
+        color: #fffbe0;
+        margin-bottom: 1rem;
+        font-size: 1.3rem;
+    }
+
+    .toc-sidebar a {
+        display: block;
+        color: #ffd500;
+        text-decoration: none;
+        margin: 0.6rem 0;
+        font-weight: 600;
+        transition: color 0.3s;
+    }
+
+    .toc-sidebar a:hover {
+        color: #fffbe0;
+    }
+
+    html {
+        scroll-behavior: smooth;
+    }
+
+     
+
+    input {
+      padding: 10px;
+      width: 300px;
+      font-size: 16px;
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      background-color: #0984e3;
+      color: white;
+      border: none;
+      cursor: pointer;
+      margin-left: 10px;
+    }
+
+    .result {
+      margin-top: 30px;
+      text-align: left;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .highlight {
+      background-color: #c49f23;
+      font-weight: bold;
+    }
+
+    .movie {
+      padding: 8px;
+      margin-bottom: 6px;
+      border-bottom: 1px solid #dcdde1;
+    }
+
+    hr {
+        border: none;
+        border-top: 2px solid rgba(255, 213, 0, 0.5);
+        margin: 2rem 0;
+    }
+
+    #references {
+        margin-top: 3rem;
+        padding-top: 1rem;
+        border-top: 2px solid #ffd500;
+    }
+
+    #references h2 {
+        color: #ffd500;
+        margin-bottom: 1rem;
+    }
+
+    #references ul {
+        list-style-type: square;
+        padding-left: 1.5rem;
+        color: #ddd;
+        font-size: 0.9rem;
+    }
+
+    #references a {
+        color: #ffd500;
+        text-decoration: none;
+    }
+
+    #references a:hover {
+        color: #fffbe0;
+        text-decoration: underline;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 1200px) {
+        .container {
+            grid-template-columns: 1fr;
+            grid-template-rows: auto 1fr auto;
+        }
+        
+        .profile-sidebar, .toc-sidebar {
+            display: none;
+        }
+    }
+
+#logArea {
+      height: 200px;
+      overflow-y: auto;
+      border: 2px solid #333;
+      background: #fff;
+      padding: 10px;
+      margin-bottom: 20px;
+      font-family: monospace;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    .log-message {
+      margin: 6px 0;
+      padding: 5px 10px;
+      border-radius: 4px;
+      opacity: 0;
+      animation: fadeIn 0.5s forwards;
+    }
+
+    .accept {
+      background-color: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    .reject {
+      background-color: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+
+    .replace {
+      background-color: #fff3cd;
+      color: #856404;
+      border: 1px solid #ffeeba;
+    }
+
+    @keyframes fadeIn {
+      to { opacity: 1; }
+    }
+
+    #finalMatches {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      justify-content: center;
+    }
+
+    .match-card {
+      border: 2px solid #444;
+      padding: 12px 18px;
+      border-radius: 8px;
+      background-color: #76abe0;
+      box-shadow: 2px 2px 8px rgba(0,0,0,0.1);
+      min-width: 180px;
+      text-align: center;
+      font-weight: bold;
+      font-size: 16px;
+    }
+
+    #nextStepBtn {
+      display: block;
+      margin: 0 auto;
+      padding: 10px 20px;
+      font-size: 16px;
+      border: none;
+      background-color: #333;
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    #nextStepBtn:disabled {
+      background-color: #bb4242;
+      cursor: not-allowed;
+    }
+
+
+</style>
+</head>
+<body>
+<div class="container">
+    <!-- Left Profile Sidebar -->
+    <aside class="profile-sidebar" aria-label="Profile Sidebar">
+        <img src="https://avatars.githubusercontent.com/u/583231?v=4" alt="Profile Picture" />
+        <h2>Karthik K P</h2>
+        <p>Computer Science Engineer</p>
+        <p>kkarthikkp43@gmail.com</p>
+        <p><strong>📍 Location:</strong> Hubli, India</p>
+        <div class="profile-links">
+            <a href="https://github.com/karthikkp2004" target="_blank" rel="noopener noreferrer">GitHub</a>
+            <a href="https://www.linkedin.com/in/karthik-k-p-39684126a/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+        </div>
+    </aside>
+
+    <main class="content-area">
+        <h1>Stable Product-Promotion Matching</h1>
+
+        <section id="introduction">
+            <h2>1. Introduction</h2>
+            <p>
+                Stable Product–Promotion Matching uses the Stable Marriage Algorithm to pair products with the most suitable promotions based on mutual preferences. This ensures that no better pairing exists, leading to optimized sales, efficient promotion use, and balanced inventory management — ideal for platforms like Amazon.
+            </p>
+            <ul>
+    <li>Matches products to promotions based on mutual preferences.</li>
+    <li>Ensures no product–promotion pair would prefer each other over their current match (stability).</li>
+    <li>Optimizes promotion impact and sales performance.</li>
+    <li>Prevents misallocation of high-value promotions to low-impact products.</li>
+    <li>Useful in large-scale marketplaces with many products and campaign options.</li>
+  </ul>
+        </section>
+
+        <hr>
+
+        <section id="code">
+            <h2>2. Code Implementation</h2>
+            <div class="code-block">
+#include &lt;iostream&gt;
+#include &lt;vector&gt;
+#include &lt;climits&gt;
+#include &lt;string&gt;
+#include &lt;queue&gt;
+#include &lt;algorithm&gt;
+
+using namespace std;
+
+const int N = 3; // Number of products/promotions
+
+vector<string> productNames = {"Phone", "Laptop", "TV"};
+vector<string> promotionNames = {"Discount10", "HolidayDeal", "Clearance"};
+
+int productPref[N][N] = {
+    {0, 1, 2}, // Phone's preferences
+    {1, 0, 2}, // Laptop's preferences
+    {1, 2, 0}  // TV's preferences
+};
+
+int promotionPref[N][N] = {
+    {1, 0, 2}, // Discount10's preferences
+    {0, 2, 1}, // HolidayDeal's preferences
+    {2, 1, 0}  // Clearance's preferences
+};
+
+int promotionPartner[N];  // Index of matched product
+bool promotionFree[N];    // Status of each promotion
+int productNext[N];       // Next promotion to propose to
+
+// Returns true if promotion prefers newProduct over currentPartner
+bool prefers(int promotion, int newProduct, int currentPartner) {
+    for (int i = 0; i < N; ++i) {
+        if (promotionPref[promotion][i] == newProduct) return true;
+        if (promotionPref[promotion][i] == currentPartner) return false;
+    }
+    return false;
+}
+
+void stableMatching() {
+    fill(begin(promotionFree), end(promotionFree), true);
+    fill(begin(promotionPartner), end(promotionPartner), -1);
+    fill(begin(productNext), end(productNext), 0);
+
+    int freeCount = N;
+
+    while (freeCount > 0) {
+        for (int p = 0; p < N; ++p) {
+            if (productNext[p] >= N) continue;
+
+            int promo = productPref[p][productNext[p]++];
+
+            if (promotionFree[promo]) {
+                promotionFree[promo] = false;
+                promotionPartner[promo] = p;
+                --freeCount;
+            } else {
+                int current = promotionPartner[promo];
+                if (prefers(promo, p, current)) {
+                    promotionPartner[promo] = p;
+                    ++productNext[current]; // Let the old product continue proposing
+                } else {
+                    ++productNext[p]; // Current product continues proposing
+                }
+            }
+        }
+    }
+
+    // Output the matches
+    cout << "Stable Product–Promotion Matches:\n";
+    for (int i = 0; i < N; ++i) {
+        cout << "- " << productNames[promotionPartner[i]]
+             << " ⇄ " << promotionNames[i] << "\n";
+    }
+}
+
+int main() {
+    stableMatching();
+    return 0;
+}
+
+            </div>
+        </section>
+
+        <div class="code-block">
+            Stable Product–Promotion Matches:
+            - Laptop ⇄ Discount10
+            - Phone ⇄ HolidayDeal
+            - TV ⇄ Clearance
+
+        </div>
+
+        <hr>
+
+        <section id="visualization">
+            <h2>3.Stable Product-Promotion Matching Visualization</h2>
+
+  <div id="logArea"></div>
+
+  <div id="finalMatches"></div>
+
+  <button id="nextStepBtn">Next Step</button>
+  </section>
+
+           
+
+        <hr>
+
+        <section id="scenario">
+           
+
+            <h2>4.Real Time Scenario </h2>
+            <p>Stable Product-Promotion Matching is a stepwise process where each product proposes to its preferred promotions in order. Promotions accept the best proposals based on their preferences, possibly replacing current matches. Rejected products continue proposing to other promotions until all matches are stable. This ensures optimal and mutually agreeable pairing of products and promotions for effective marketing.
+
+</p>
+  <h3>Initialization</h3>
+    <ul>
+      <li><strong>proposals[]:</strong> Tracks how many times each product has proposed to a promotion (all start at zero).</li>
+      <li><strong>partners[]:</strong> Tracks which product is currently matched to each promotion (initially all promotions are unmatched).</li>
+      <li><strong>matched:</strong> Number of products currently matched to promotions (starts at zero).</li>
+    </ul>
+
+  
+
+    <h4>Proposal</h4>
+    <div class="example">Product A proposes to Holiday Electronics Sale.</div>
+
+    <h4>Promotion Decision</h4>
+    <ul>
+      <li><strong>If unmatched:</strong> Accepts the product immediately.</li>
+      <div class="example">Promotion X is unmatched, accepts Product A.</div>
+
+      <li><strong>If already matched:</strong> Compares current partner with new proposal.</li>
+      <ul>
+        <li>If it prefers new product: rejects current and accepts new.</li>
+        <div class="example">Promotion X prefers Product B over Product A. Rejects A, accepts B.</div>
+
+        <li>If it prefers current partner: rejects new proposal.</li>
+        <div class="example">Promotion X prefers Product A over Product C. Rejects C.</div>
+      </ul>
+    </ul>
+
+    <h4>Reaction to Rejection</h4>
+    <div class="example">Product A was rejected, now proposes to Smart Home Discount.</div>
+
+    <h4>Logging Events</h4>
+    <div class="log">Product A proposed to Holiday Electronics Sale and was accepted.</div>
+    <div class="log">Promotion X replaced Product A with Product B.</div>
+    <div class="log">Product C was rejected by Promotion Y.</div>
+  
+        </section>
+
+        <hr>
+
+        <section id="complexity">
+            <h2>5. Time and Space Complexity</h2>
+            <table style="border-collapse: collapse; width: 50%; margin: 20px auto; text-align: center;">
+  <thead>
+    <tr>
+      <th style="border: 2px solid black; padding: 10px; background-color: #261c48;">Component</th>
+      <th style="border: 2px solid black; padding: 10px; background-color: #261c48;">Complexity</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="border: 2px solid black; padding: 10px;">Time Complexity</td>
+      <td style="border: 2px solid black; padding: 10px;">O(n²)</td>
+    </tr>
+    <tr>
+      <td style="border: 2px solid black; padding: 10px;">Space Complexity</td>
+      <td style="border: 2px solid black; padding: 10px;">O(n²)</td>
+    </tr>
+  </tbody>
+</table>
+
+        </section>
+
+        <hr>
+
+        <h2>6.Applications of Stable Marriage Algoritm</h2>
+    <p>How Amazon optimizes pricing, inventory, and user experience using Stable Marriage Algorithm</p>
+  </header>
+
+ 
+    <section id="Applications">
+    <table style="border-collapse: collapse; width: 100%; border: 1px solid black;">
+  <thead>
+    <tr style="border: 1px solid black; background-color: #713fae;">
+      <th style="border: 1px solid black; padding: 8px; text-align: left;">Application</th>
+      <th style="border: 1px solid black; padding: 8px; text-align: left;">Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr style="border: 1px solid black;">
+      <td style="border: 1px solid black; padding: 8px;">Product–Promotion Matching</td>
+      <td style="border: 1px solid black; padding: 8px;">Matches products with the most relevant promotional campaigns based on mutual preferences.</td>
+    </tr>
+    <tr style="border: 1px solid black;">
+      <td style="border: 1px solid black; padding: 8px;">Warehouse Task Assignment</td>
+      <td style="border: 1px solid black; padding: 8px;">Pairs workers with tasks efficiently by considering both task requirements and worker skills/preferences.</td>
+    </tr>
+    <tr style="border: 1px solid black;">
+      <td style="border: 1px solid black; padding: 8px;">Employee–Shift Scheduling</td>
+      <td style="border: 1px solid black; padding: 8px;">Assigns employees to preferred shifts while ensuring operational balance.</td>
+    </tr>
+    <tr style="border: 1px solid black;">
+      <td style="border: 1px solid black; padding: 8px;">Recommendation–Slot Allocation</td>
+      <td style="border: 1px solid black; padding: 8px;">Matches personalized recommendations to homepage slots for maximum user engagement.</td>
+    </tr>
+    <tr style="border: 1px solid black;">
+      <td style="border: 1px solid black; padding: 8px;">Vendor–Logistics Partner Matching</td>
+      <td style="border: 1px solid black; padding: 8px;">Optimally assigns sellers to shipping/logistics partners based on service preferences and reliability.</td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+    </section>
+
+        <section id="references">
+            <h2>7. References</h2>
+            <ul>
+    
+    <li>
+        <strong>GeeksforGeeks - Stable Marriage Problem:</strong>
+        <a href="https://www.geeksforgeeks.org/stable-marriage-problem/" target="_blank" rel="noopener noreferrer">https://www.geeksforgeeks.org/stable-marriage-problem/</a>
+    </li>
+    <li>
+        <strong>wikipedia:</strong>
+        <a href="https://en.wikipedia.org/wiki/Stable_marriage_problem" target="_blank" rel="noopener noreferrer">https://en.wikipedia.org/wiki/Stable_marriage_problem</a>
+    </li>
+</ul>
+
+        </section>
+    </main>
+
+    <aside class="toc-sidebar">
+        <h2>Contents</h2>
+        <a href="#introduction">Introduction</a>
+        <a href="#code">Code Implementation</a>
+        <a href="#visualization">Visualization</a>
+        <a href="#scenario">Scenario</a>
+        <a href="#complexity">Complexity</a>
+         <a href="#Applications">Applications </a>
+        <a href="#references">References</a>
+    </aside>
+</div>
+
+<script>
+    // Sample preferences for Products and Promotions
+    // Indexes represent product or promotion IDs
+    const products = ["Product A", "Product B", "Product C"];
+    const promotions = ["Promo X", "Promo Y", "Promo Z"];
+
+    // Each product's preference list (in order)
+    const productPrefs = [
+      [0, 1, 2], // Product A prefers Promo X > Promo Y > Promo Z
+      [1, 0, 2], // Product B prefers Promo Y > Promo X > Promo Z
+      [1, 2, 0]  // Product C prefers Promo Y > Promo Z > Promo X
+    ];
+
+    // Each promotion's preference list
+    const promotionPrefs = [
+      [1, 0, 2], // Promo X prefers Product B > Product A > Product C
+      [0, 2, 1], // Promo Y prefers Product A > Product C > Product B
+      [2, 1, 0]  // Promo Z prefers Product C > Product B > Product A
+    ];
+
+    // Track current matches: promotion -> product or null if free
+    const promoMatches = Array(promotions.length).fill(null);
+
+    // Track which proposal index each product is on
+    const productNextProposal = Array(products.length).fill(0);
+
+    // Track which products are free
+    let freeProducts = [];
+    for(let i = 0; i < products.length; i++) freeProducts.push(i);
+
+    // Step queue (to handle each proposal as a step)
+    let steps = [];
+
+    // Prepare steps in advance: just call propose for each free product until stable
+    // We'll simulate this step by step on button click
+
+    // Function to get promotion's preference ranking of a product
+    function promoPrefers(promo, newProd, currentProd) {
+      return promotionPrefs[promo].indexOf(newProd) < promotionPrefs[promo].indexOf(currentProd);
+    }
+
+    // Add log helper
+    function addLog(message, type = '') {
+      const logArea = document.getElementById('logArea');
+      const p = document.createElement('p');
+      p.textContent = message;
+      p.className = 'log-message ' + type;
+      logArea.appendChild(p);
+      logArea.scrollTop = logArea.scrollHeight;
+    }
+
+    // Generate next step function for proposals
+    function nextProposalStep() {
+      if (freeProducts.length === 0) {
+        addLog("All products matched! Showing final matches...", 'accept');
+        showFinalMatches();
+        document.getElementById('nextStepBtn').disabled = true;
+        return;
+      }
+
+      const product = freeProducts[0];
+      const prefs = productPrefs[product];
+      const promoIndex = productNextProposal[product];
+
+      if (promoIndex >= prefs.length) {
+        // No more promotions to propose
+        freeProducts.shift();
+        nextProposalStep();
+        return;
+      }
+
+      const promo = prefs[promoIndex];
+      productNextProposal[product]++;
+
+      addLog(`${products[product]} proposes to ${promotions[promo]}`);
+
+      if (promoMatches[promo] === null) {
+        // Promotion is free
+        promoMatches[promo] = product;
+        freeProducts.shift();
+        addLog(`${promotions[promo]} accepts ${products[product]}`, 'accept');
+      } else {
+        const currentProd = promoMatches[promo];
+        if (promoPrefers(promo, product, currentProd)) {
+          // Promotion prefers new product
+          promoMatches[promo] = product;
+          freeProducts.shift();
+          freeProducts.push(currentProd);
+          addLog(`${promotions[promo]} rejects ${products[currentProd]} and accepts ${products[product]}`, 'replace');
+        } else {
+          // Promotion rejects new product
+          addLog(`${promotions[promo]} rejects ${products[product]}`, 'reject');
+        }
+      }
+    }
+
+    // Show final matches nicely
+    function showFinalMatches() {
+      const container = document.getElementById('finalMatches');
+      container.innerHTML = '';
+      for (let i = 0; i < promotions.length; i++) {
+        const prod = promoMatches[i];
+        if (prod !== null) {
+          const card = document.createElement('div');
+          card.className = 'match-card';
+          card.textContent = `${products[prod]}  ➜  ${promotions[i]}`;
+          container.appendChild(card);
+        }
+      }
+    }
+
+    // Button click handler
+    document.getElementById('nextStepBtn').addEventListener('click', () => {
+      nextProposalStep();
+    });
+  </script>
+</body>
+</html>
