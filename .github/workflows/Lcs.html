@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Amazon Prime Movie Search Engine</title>
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+    
+    body, html {
+        height: 100%;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .container {
+        display: grid;
+        grid-template-columns: 280px 1fr 280px;
+        height: 100vh;
+        gap: 0;
+    }
+
+    .profile-sidebar, .toc-sidebar {
+        background: rgba(0, 0, 0, 0.3);
+        padding: 5rem 1.5rem;
+        overflow-y: auto;
+    }
+
+    .profile-sidebar {
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .profile-sidebar img {
+        border-radius: 50%;
+        width: 120px;
+        height: 120px;
+        object-fit: cover;
+        border: 3px solid #ffd500;
+        margin-bottom: 1rem;
+    }
+
+    .profile-sidebar h2 {
+        color: #fffbe0;
+        margin-bottom: 0.2rem;
+    }
+
+    .profile-sidebar p {
+        color: #ddd;
+        margin-bottom: 1.2rem;
+        font-size: 0.9rem;
+    }
+
+    .profile-links a {
+        display: inline-block;
+        margin: 0.3rem 0.8rem;
+        color: #ffd500;
+        font-weight: 600;
+        text-decoration: none;
+        transition: color 0.3s ease;
+    }
+    
+    .profile-links a:hover {
+        color: #fffbe0;
+    }
+
+    .content-area {
+        overflow-y: auto;
+        padding: 2rem 3rem;
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    h1, h2, h3, h4 {
+        color: #fffbe0;
+        margin-bottom: 1rem;
+    }
+
+    h1 {
+        font-size: 2.2rem;
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    p, ul {
+        margin-bottom: 1.2rem;
+        line-height: 1.6;
+    }
+
+    .code-block {
+        background-color: #1e1e2f;
+        color: #d4d4d4;
+        padding: 1rem;
+        border-radius: 8px;
+        overflow-x: auto;
+        font-family: 'Courier New', monospace;
+        white-space: pre-wrap;
+        animation: fadeIn 1s ease-in-out;
+        margin: 1rem 0;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .toc-sidebar h2 {
+        color: #fffbe0;
+        margin-bottom: 1rem;
+        font-size: 1.3rem;
+    }
+
+    .toc-sidebar a {
+        display: block;
+        color: #ffd500;
+        text-decoration: none;
+        margin: 0.6rem 0;
+        font-weight: 600;
+        transition: color 0.3s;
+    }
+
+    .toc-sidebar a:hover {
+        color: #fffbe0;
+    }
+
+    html {
+        scroll-behavior: smooth;
+    }
+
+     
+
+    input {
+      padding: 10px;
+      width: 300px;
+      font-size: 16px;
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      background-color: #0984e3;
+      color: white;
+      border: none;
+      cursor: pointer;
+      margin-left: 10px;
+    }
+
+    .result {
+      margin-top: 30px;
+      text-align: left;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .highlight {
+      background-color: #c49f23;
+      font-weight: bold;
+    }
+
+    .movie {
+      padding: 8px;
+      margin-bottom: 6px;
+      border-bottom: 1px solid #dcdde1;
+    }
+
+    hr {
+        border: none;
+        border-top: 2px solid rgba(255, 213, 0, 0.5);
+        margin: 2rem 0;
+    }
+
+    #references {
+        margin-top: 3rem;
+        padding-top: 1rem;
+        border-top: 2px solid #ffd500;
+    }
+
+    #references h2 {
+        color: #ffd500;
+        margin-bottom: 1rem;
+    }
+
+    #references ul {
+        list-style-type: square;
+        padding-left: 1.5rem;
+        color: #ddd;
+        font-size: 0.9rem;
+    }
+
+    #references a {
+        color: #ffd500;
+        text-decoration: none;
+    }
+
+    #references a:hover {
+        color: #fffbe0;
+        text-decoration: underline;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 1200px) {
+        .container {
+            grid-template-columns: 1fr;
+            grid-template-rows: auto 1fr auto;
+        }
+        
+        .profile-sidebar, .toc-sidebar {
+            display: none;
+        }
+    }
+</style>
+</head>
+<body>
+<div class="container">
+    <!-- Left Profile Sidebar -->
+    <aside class="profile-sidebar" aria-label="Profile Sidebar">
+        <img src="https://avatars.githubusercontent.com/u/583231?v=4" alt="Profile Picture" />
+        <h2>Karthik K P</h2>
+        <p>Computer Science Engineer</p>
+        <p>kkarthikkp43@gmail.com</p>
+        <p><strong>📍 Location:</strong> Hubli, India</p>
+        <div class="profile-links">
+            <a href="https://github.com/karthikkp2004" target="_blank" rel="noopener noreferrer">GitHub</a>
+            <a href="https://www.linkedin.com/in/karthik-k-p-39684126a/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+        </div>
+    </aside>
+
+    <main class="content-area">
+        <h1>Amazon Prime Movie Search Engine</h1>
+
+        <section id="introduction">
+            <h2>1. Introduction</h2>
+            <p>
+                In streaming platforms like Amazon Prime, users often make spelling mistakes, type incomplete words, or search using short fragments of movie titles. A regular exact or prefix-based search may fail to capture such flexible queries. 
+            </p>
+            <p>
+                To solve this, we use the <strong>Longest Common Subsequence (LCS)</strong> technique. It compares the user’s search input with each movie title to determine how closely related they are — even if the input is abbreviated or out of sync. 
+    By ranking titles based on the LCS score, we ensure that the most relevant and likely matches are shown at the top.
+            </p>
+         <p>This intelligent matching boosts user experience by handling typos, fragmented queries, and non-contiguous matches, offering a smarter way to search through a large movie catalog.</p>
+        </section>
+
+        <hr>
+
+        <section id="code">
+            <h2>2. Code Implementation</h2>
+            <div class="code-block">
+#include &lt;iostream&gt;
+#include &lt;vector&gt;
+#include &lt;climits&gt;
+#include &lt;string&gt;
+#include &lt;algorithm&gt;
+
+using namespace std;
+
+// Recursive function to compute LCS length
+int LCSRecursive(const string& a, const string& b, int i, int j) {
+    if (i == 0 || j == 0)
+        return 0;
+
+    if (a[i - 1] == b[j - 1])
+        return 1 + LCSRecursive(a, b, i - 1, j - 1);
+    else
+        return max(LCSRecursive(a, b, i - 1, j), LCSRecursive(a, b, i, j - 1));
+}
+
+// Struct to store movie title and its LCS score
+struct Match {
+    string title;
+    int score;
+
+    bool operator<(const Match& other) const {
+        return score > other.score;  // Descending
+    }
+};
+
+// Search top-k matching movies using recursive LCS
+vector<string> searchMovies(const string& query, const vector<string>& movieTitles, int k = 5) {
+    vector<Match> results;
+
+    for (const string& title : movieTitles) {
+        int score = LCSRecursive(query, title, query.size(), title.size());
+        if (score > 0)
+            results.push_back({title, score});
+    }
+
+    sort(results.begin(), results.end());
+
+    vector<string> topMatches;
+    for (int i = 0; i < min(k, (int)results.size()); ++i)
+        topMatches.push_back(results[i].title);
+
+    return topMatches;
+}
+
+int main() {
+    vector<string> movieTitles = {
+        "The Marvels",
+        "Amazing Amazon Adventures",
+        "Prime Suspect",
+        "The Grand Tour",
+        "Amazed by Nature",
+        "The Prime Effect",
+        "Amazon Prime Originals",
+        "The Terminal List",
+        "Tomorrow War"
+    };
+
+    string userQuery = "amazon prime";
+
+    vector<string> matches = searchMovies(userQuery, movieTitles);
+
+    cout << "Top matches for '" << userQuery << "':\n";
+    for (const string& title : matches) {
+        cout << "- " << title << endl;
+    }
+
+    return 0;
+}
+
+            </div>
+        </section>
+
+        <hr>
+
+        <section id="visualization">
+            <h2>3.Amazon Prime Movie Search</h2>
+  <p>Using Longest Common Subsequence (LCS)</p>
+
+  <input type="text" id="query" placeholder="Type your search query..." />
+  <button onclick="search()">Search</button>
+
+  <div class="result" id="output"></div>
+  </section>
+
+           
+
+        <hr>
+
+        <section id="scenario">
+           
+
+            <h2>4.Real Time Scenario </h2>
+            <p>Karthik is relaxing at home and uses his voice assistant to search:</p>
+  <blockquote>“Alexa, show me <em>amazing action thriller movies</em>.”</blockquote>
+  <p>However, voice input systems often don’t catch exact movie titles but general or partial phrases.</p>
+
+           <h3> How LCS Helps</h3>
+  <p>Amazon's backend receives the user query <code>"amazing action thriller movies"</code>. It compares this to known movie titles using LCS to measure similarity.</p>
+
+  <h3> Catalog Sample:</h3>
+  <ul>
+    <li> Amazing Amazon Adventures</li>
+    <li> The Terminal List</li>
+    <li> Tomorrow War</li>
+    <li> Prime Suspect</li>
+    <li> Reacher</li>
+    <li> Amazed by Nature</li>
+  </ul>
+
+  <h3>Matching Process (LCS):</h3>
+<table style="border-collapse: collapse; width: 100%;">
+  <thead>
+    <tr>
+      <th style="border: 1px solid black; padding: 8px;">User Input (Query)</th>
+      <th style="border: 1px solid black; padding: 8px;">Movie Title</th>
+      <th style="border: 1px solid black; padding: 8px;">LCS Match</th>
+      <th style="border: 1px solid black; padding: 8px;">Score</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="border: 1px solid black; padding: 8px;">amazing action thriller movies</td>
+      <td style="border: 1px solid black; padding: 8px;">Amazing Amazon Adventures</td>
+      <td style="border: 1px solid black; padding: 8px;">amazingaon</td>
+      <td style="border: 1px solid black; padding: 8px;">10</td>
+    </tr>
+    <tr>
+      <td style="border: 1px solid black; padding: 8px;">amazing action thriller movies</td>
+      <td style="border: 1px solid black; padding: 8px;">Amazed by Nature</td>
+      <td style="border: 1px solid black; padding: 8px;">amazedanre</td>
+      <td style="border: 1px solid black; padding: 8px;">9</td>
+    </tr>
+    <tr>
+      <td style="border: 1px solid black; padding: 8px;">amazing action thriller movies</td>
+      <td style="border: 1px solid black; padding: 8px;">Reacher</td>
+      <td style="border: 1px solid black; padding: 8px;">acr</td>
+      <td style="border: 1px solid black; padding: 8px;">3</td>
+    </tr>
+    <tr>
+      <td style="border: 1px solid black; padding: 8px;">amazing action thriller movies</td>
+      <td style="border: 1px solid black; padding: 8px;">Tomorrow War</td>
+      <td style="border: 1px solid black; padding: 8px;">amowar</td>
+      <td style="border: 1px solid black; padding: 8px;">6</td>
+    </tr>
+  </tbody>
+</table>
+
+<br>
+  <h3>Top Recommendations</h3>
+  <ul>
+    <li><strong>1.</strong> Amazing Amazon Adventures (score: 10)</li>
+    <li><strong>2.</strong> Amazed by Nature (score: 9)</li>
+    <li><strong>3.</strong> Tomorrow War (score: 6)</li>
+  </ul>
+        </section>
+
+        <hr>
+
+        <section id="complexity">
+            <h2>5. Time and Space Complexity</h2>
+            <table style="border-collapse: collapse; width: 100%; max-width: 600px; border: 1px solid black;">
+  <thead>
+    <tr style="background-color: #9c40de;">
+      <th style="border: 1px solid black; padding: 8px;">Function</th>
+      <th style="border: 1px solid black; padding: 8px;">Time Complexity</th>
+      <th style="border: 1px solid black; padding: 8px;">Space Complexity</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="border: 1px solid black; padding: 8px;">LCS</td>
+      <td style="border: 1px solid black; padding: 8px;">O(m * n)</td>
+      <td style="border: 1px solid black; padding: 8px;">O(m * n)</td>
+    </tr>
+    <tr>
+      <td style="border: 1px solid black; padding: 8px;">searchMovies</td>
+      <td style="border: 1px solid black; padding: 8px;">O(M * Q * L) + O(M log M)</td>
+      <td style="border: 1px solid black; padding: 8px;">O(Q * L + M)</td>
+    </tr>
+  </tbody>
+</table>
+<br>
+<p><strong>Where:</strong></p>
+<ul>
+  <li><strong>m, n</strong> = lengths of strings compared in LCS (query and title),</li>
+  <li><strong>M</strong> = number of movie titles,</li>
+  <li><strong>Q</strong> = length of query,</li>
+  <li><strong>L</strong> = average length of movie titles.</li>
+</ul>
+
+        </section>
+
+        <hr>
+
+        <h2>6.Applications of LCS in Amazon eCommerce</h2>
+    
+  </header>
+
+ 
+    <section id="Applications">
+      <ol>
+  <li>
+    <strong>Amazon Prime Video Search</strong><br/>
+    Matching user search queries to movie or TV show titles even if the query is partial, misspelled, or words are out of order.
+    Helps improve user experience by providing relevant recommendations and reducing “no results” cases.
+  </li>
+  <li>
+    <strong>Amazon Product Search</strong><br/>
+    Matching customer search queries to product titles and descriptions.
+    Handling misspellings, incomplete queries, or re-ordered words (e.g., “wireless bluetooth headphones” vs “bluetooth wireless headphones”).
+  </li>
+  <li>
+    <strong>Customer Support & Help Center</strong><br/>
+    Matching user queries/questions to FAQ articles, help documents, or chatbot knowledge base entries.
+  </li>
+  <li>
+    <strong>Review & Feedback Analysis</strong><br/>
+    Identifying common patterns or phrases across large volumes of customer reviews.
+  </li>
+  <li>
+    <strong>Inventory & Catalog Management</strong><br/>
+    Matching new product listings to existing catalog entries to avoid duplicates.
+  </li>
+</ol>
+
+    </section>
+
+        <section id="references">
+            <h2>7. References</h2>
+            <ul>
+                <li>
+                    <p>
+<strong>Hirschberg, D. S. (1977).</strong> <em>Algorithms for the Longest Common Subsequence Problem.</em> <strong>Journal of the ACM (JACM)</strong>, 24(4), 664–675. 
+<a href="https://doi.org/10.1145/321992.322001" target="_blank" rel="noopener noreferrer">https://doi.org/10.1145/321992.322001</a>
+</p>
+
+                </li>
+                <li>
+                    <strong>GeeksforGeeks - LCS:</strong>
+                    <a href="https://www.geeksforgeeks.org/longest-common-subsequence-dp-4/" target="_blank">https://www.geeksforgeeks.org/longest-common-subsequence-dp-4/</a>
+                </li>
+                <li>
+                    <strong>wikipedia:</strong>
+                    <a href="https://en.wikipedia.org/wiki/Longest_common_subsequence" target="_blank">https://en.wikipedia.org/wiki/Longest_common_subsequence</a>
+                </li>
+            </ul>
+        </section>
+    </main>
+
+    <aside class="toc-sidebar">
+        <h2>Contents</h2>
+        <a href="#introduction">Introduction</a>
+        <a href="#code">Code Implementation</a>
+        <a href="#visualization">Visualization</a>
+        <a href="#scenario">Scenario</a>
+        <a href="#complexity">Complexity</a>
+         <a href="#Applications">Applications </a>
+        <a href="#references">References</a>
+    </aside>
+</div>
+
+<script>
+    const movies = [
+      "The Marvels",
+      "Amazing Amazon Adventures",
+      "Prime Suspect",
+      "The Grand Tour",
+      "Amazed by Nature",
+      "The Prime Effect",
+      "Amazon Prime Originals",
+      "The Terminal List",
+      "Tomorrow War",
+      "Reacher",
+      "Citadel",
+      "Jack Ryan",
+      "The Peripheral",
+      "Upload",
+      "The Boys",
+      "Wheel of Time",
+      "Good Omens",
+      "Hanna",
+      "Bosch Legacy",
+      "Invincible",
+      "The Expanse",
+      "Carnival Row",
+      "Night Sky",
+      "Modern Love",
+      "Undone",
+      "Outer Range",
+      "The Rig",
+      "Back to the Rafters",
+      "Making the Cut",
+      "The Wilds"
+    ];
+
+    // Basic LCS function
+    function lcs(a, b) {
+      const m = a.length, n = b.length;
+      const dp = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
+
+      for (let i = 1; i <= m; i++) {
+        for (let j = 1; j <= n; j++) {
+          if (a[i - 1] === b[j - 1]) {
+            dp[i][j] = dp[i - 1][j - 1] + 1;
+          } else {
+            dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
+          }
+        }
+      }
+
+      // Reconstruct subsequence for highlighting
+      let i = m, j = n, seq = '';
+      while (i > 0 && j > 0) {
+        if (a[i - 1] === b[j - 1]) {
+          seq = a[i - 1] + seq;
+          i--; j--;
+        } else if (dp[i - 1][j] > dp[i][j - 1]) {
+          i--;
+        } else {
+          j--;
+        }
+      }
+
+      return { score: dp[m][n], seq };
+    }
+
+    function highlightMatch(title, seq) {
+      let i = 0;
+      return title.split('').map(c => {
+        if (i < seq.length && c.toLowerCase() === seq[i].toLowerCase()) {
+          i++;
+          return `<span class="highlight">${c}</span>`;
+        }
+        return c;
+      }).join('');
+    }
+
+    function search() {
+      const query = document.getElementById("query").value.trim().toLowerCase();
+      if (!query) return;
+
+      const results = movies.map(title => {
+        const { score, seq } = lcs(query, title.toLowerCase());
+        return { title, score, seq };
+      }).filter(r => r.score > 0);
+
+      results.sort((a, b) => b.score - a.score);
+      const output = document.getElementById("output");
+      output.innerHTML = `<h3>Top Matches</h3>`;
+
+      if (results.length === 0) {
+        output.innerHTML += `<p>No matches found.</p>`;
+        return;
+      }
+
+      results.slice(0, 5).forEach(res => {
+        output.innerHTML += `<div class="movie">${highlightMatch(res.title, res.seq)}</div>`;
+      });
+    }
+  </script>
+</body>
+</html>

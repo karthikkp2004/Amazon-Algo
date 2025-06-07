@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Ford-Fulkerson in AWS Traffic Routing</title>
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+    
+    body, html {
+        height: 100%;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .container {
+        display: grid;
+        grid-template-columns: 280px 1fr 280px;
+        height: 100vh;
+        gap: 0;
+    }
+
+    .profile-sidebar, .toc-sidebar {
+        background: rgba(0, 0, 0, 0.3);
+        padding: 5rem 1.5rem;
+        overflow-y: auto;
+    }
+
+    .profile-sidebar {
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .profile-sidebar img {
+        border-radius: 50%;
+        width: 120px;
+        height: 120px;
+        object-fit: cover;
+        border: 3px solid #ffd500;
+        margin-bottom: 1rem;
+    }
+
+    .profile-sidebar h2 {
+        color: #fffbe0;
+        margin-bottom: 0.2rem;
+    }
+
+    .profile-sidebar p {
+        color: #ddd;
+        margin-bottom: 1.2rem;
+        font-size: 0.9rem;
+    }
+
+    .profile-links a {
+        display: inline-block;
+        margin: 0.3rem 0.8rem;
+        color: #ffd500;
+        font-weight: 600;
+        text-decoration: none;
+        transition: color 0.3s ease;
+    }
+    
+    .profile-links a:hover {
+        color: #fffbe0;
+    }
+
+    .content-area {
+        overflow-y: auto;
+        padding: 2rem 3rem;
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    h1, h2, h3, h4 {
+        color: #fffbe0;
+        margin-bottom: 1rem;
+    }
+
+    h1 {
+        font-size: 2.2rem;
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    p, ul {
+        margin-bottom: 1.2rem;
+        line-height: 1.6;
+    }
+
+    .code-block {
+        background-color: #1e1e2f;
+        color: #d4d4d4;
+        padding: 1rem;
+        border-radius: 8px;
+        overflow-x: auto;
+        font-family: 'Courier New', monospace;
+        white-space: pre-wrap;
+        animation: fadeIn 1s ease-in-out;
+        margin: 1rem 0;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .toc-sidebar h2 {
+        color: #fffbe0;
+        margin-bottom: 1rem;
+        font-size: 1.3rem;
+    }
+
+    .toc-sidebar a {
+        display: block;
+        color: #ffd500;
+        text-decoration: none;
+        margin: 0.6rem 0;
+        font-weight: 600;
+        transition: color 0.3s;
+    }
+
+    .toc-sidebar a:hover {
+        color: #fffbe0;
+    }
+
+    html {
+        scroll-behavior: smooth;
+    }
+
+    .graph-container {
+        position: relative;
+        height: 600px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        padding: 20px;
+        margin: 2rem 0;
+    }
+
+    .node {
+        position: absolute;
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(135deg, #3498db, #2980b9);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-weight: bold;
+        font-size: 16px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        transition: all 0.3s ease;
+        border: 3px solid #ffffff;
+    }
+
+    .node.source {
+        background: linear-gradient(135deg, #27ae60, #229954);
+        box-shadow: 0 0 20px rgba(39, 174, 96, 0.5);
+    }
+
+    .node.sink {
+        background: linear-gradient(135deg, #e74c3c, #c0392b);
+        box-shadow: 0 0 20px rgba(231, 76, 60, 0.5);
+    }
+
+    .node.active {
+        transform: scale(1.1);
+        box-shadow: 0 0 25px rgba(255, 213, 0, 0.7);
+    }
+
+    svg {
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 1;
+        width: 100%;
+        height: 100%;
+    }
+
+    .edge {
+        stroke: #4b5563;
+        stroke-width: 3;
+        fill: none;
+        transition: all 0.3s ease;
+    }
+
+    .edge.flow {
+        stroke: #ffd500;
+        stroke-width: 5;
+        animation: flowAnimation 2s ease-in-out;
+    }
+
+    @keyframes flowAnimation {
+        0% { stroke-dasharray: 10; stroke-dashoffset: 0; }
+        100% { stroke-dasharray: 10; stroke-dashoffset: -20; }
+    }
+
+    .label {
+        position: absolute;
+        font-size: 14px;
+        background: rgba(255, 255, 255, 0.9);
+        padding: 4px 8px;
+        border-radius: 6px;
+        border: 2px solid #3498db;
+        color: #2c3e50;
+        font-weight: bold;
+        z-index: 10;
+        transition: all 0.3s ease;
+    }
+
+    .label.highlight {
+        background: #ffd500;
+        border-color: #f39c12;
+        transform: scale(1.1);
+    }
+
+    .controls {
+        text-align: center;
+        margin: 2rem 0;
+        padding: 1rem;
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+    }
+
+    button {
+        background: linear-gradient(135deg, #3498db, #2980b9);
+        color: white;
+        border: none;
+        padding: 0.8rem 1.5rem;
+        border-radius: 6px;
+        cursor: pointer;
+        margin: 0.5rem;
+        font-weight: 600;
+        font-size: 14px;
+        box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+        transition: all 0.3s ease;
+    }
+
+    button:hover:not(:disabled) {
+        background: linear-gradient(135deg, #2980b9, #3498db);
+        transform: translateY(-2px);
+        box-shadow: 0 5px 12px rgba(0,0,0,0.4);
+    }
+
+    button:disabled {
+        background: #7f8c8d;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    .info-panel {
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin: 1rem 0;
+        border-left: 4px solid #ffd500;
+    }
+
+    .scenario-box {
+        background: rgba(52, 152, 219, 0.2);
+        border: 2px solid #3498db;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin: 1rem 0;
+    }
+
+    .output {
+        background: rgba(0, 0, 0, 0.4);
+        padding: 1rem;
+        border-radius: 6px;
+        border-left: 4px solid #ffd500;
+        font-family: 'Courier New', monospace;
+        margin: 1rem 0;
+        font-size: 14px;
+    }
+
+    .step {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 1rem;
+        margin: 0.5rem 0;
+        border-radius: 6px;
+        border-left: 3px solid #27ae60;
+    }
+
+    hr {
+        border: none;
+        border-top: 2px solid rgba(255, 213, 0, 0.5);
+        margin: 2rem 0;
+    }
+
+    #references {
+        margin-top: 3rem;
+        padding-top: 1rem;
+        border-top: 2px solid #ffd500;
+    }
+
+    #references h2 {
+        color: #ffd500;
+        margin-bottom: 1rem;
+    }
+
+    #references ul {
+        list-style-type: square;
+        padding-left: 1.5rem;
+        color: #ddd;
+        font-size: 0.9rem;
+    }
+
+    #references a {
+        color: #ffd500;
+        text-decoration: none;
+    }
+
+    #references a:hover {
+        color: #fffbe0;
+        text-decoration: underline;
+    }
+
+    @media (max-width: 1200px) {
+        .container {
+            grid-template-columns: 1fr;
+            grid-template-rows: auto 1fr auto;
+        }
+        
+        .profile-sidebar, .toc-sidebar {
+            display: none;
+        }
+    }
+</style>
+</head>
+<body>
+<div class="container">
+    <!-- Left Profile Sidebar -->
+    <aside class="profile-sidebar" aria-label="Profile Sidebar">
+        <img src="https://avatars.githubusercontent.com/u/583231?v=4" alt="Profile Picture" />
+        <h2>Karthik K P</h2>
+        <p>Computer Science Engineer</p>
+        <p>kkarthikkp43@gmail.com</p>
+        <p><strong>📍 Location:</strong> Hubli, India</p>
+        <div class="profile-links">
+            <a href="https://github.com/karthikkp2004" target="_blank" rel="noopener noreferrer">GitHub</a>
+            <a href="https://www.linkedin.com/in/karthik-k-p-39684126a/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+        </div>
+    </aside>
+
+    <main class="content-area">
+        <h1>Ford-Fulkerson in AWS Traffic Routing</h1>
+
+        <section id="introduction">
+            <h2>1. Introduction</h2>
+            <p>
+                Modern cloud platforms such as Amazon Web Services (AWS) operate at massive scales, managing complex networks of servers, storage systems, and data centers spread across the globe. One of the critical challenges in such infrastructure is ensuring efficient data flow between components without congestion or performance degradation.
+            </p>
+            <p>
+                The Ford-Fulkerson algorithm offers a powerful solution to this problem. It is a classical algorithm used to compute the maximum flow in a network — that is, the greatest possible rate at which data can be transferred from a source node (e.g., a user entry point or load balancer) to a sink node (e.g., a service endpoint or data repository), given various bandwidth constraints on intermediate network links.
+            </p>
+
+            <div class="info-panel">
+                <h3>🎯 Key Applications in AWS:</h3>
+                <ul>
+                    <li><strong>Load Balancer Optimization:</strong> Distributing traffic across multiple EC2 instances</li>
+                    <li><strong>CDN Route Planning:</strong> Optimizing CloudFront content delivery paths</li>
+                    <li><strong>VPC Network Design:</strong> Maximizing throughput between subnets</li>
+                    <li><strong>Data Pipeline Management:</strong> Optimizing ETL job flows in AWS Glue</li>
+                </ul>
+            </div>
+        </section>
+
+        <hr>
+
+        <section id="real-scenario">
+            <h2>2. Real-Time AWS Scenario</h2>
+            <div class="scenario-box">
+                <h3>🌐 E-commerce Platform During Black Friday</h3>
+                <p><strong>Problem:</strong> An e-commerce company running on AWS experiences massive traffic spikes during Black Friday. They need to route user requests efficiently through their infrastructure:</p>
+                <ul>
+                    <li><strong>Source (S):</strong> Application Load Balancer receiving user requests</li>
+                    <li><strong>Node A:</strong> Primary data center (us-east-1) with capacity 10 Gbps</li>
+                    <li><strong>Node B:</strong> Secondary data center (us-west-2) with capacity 5 Gbps</li>
+                    <li><strong>Node C:</strong> Database cluster that can handle combined traffic</li>
+                    <li><strong>Sink (T):</strong> Final response delivery to users</li>
+                </ul>
+                <p><strong>Goal:</strong> Find the maximum traffic throughput the system can handle without bottlenecks.</p>
+            </div>
+
+
+
+            <section id="ford-fulkerson-architecture" style="padding: 4rem 2rem; max-width: 900px; margin: 0 auto; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #374151; background: #f9fafb;">
+  <h2 style="font-size: 2.5rem; font-weight: 700; color: #111827; text-align: center; margin-bottom: 3rem;">
+    Ford-Fulkerson Algorithm Architecture for Traffic Routing in AWS
+  </h2>
+  
+  <div style="display: grid; grid-template-columns: repeat(7, 1fr); grid-template-rows: 120px 100px 120px 100px 120px; gap: 1rem; align-items: center; justify-items: center;">
+
+    <!-- Source Node -->
+    <div style="grid-column: 4 / 5; grid-row: 1 / 2; background: #2563eb; color: white; padding: 1rem 1.5rem; border-radius: 0.75rem; font-weight: 700; box-shadow: 0 6px 12px rgba(37, 99, 235, 0.4); text-align: center;">
+      Load Balancer<br><small style="font-weight: 400; font-size: 0.9rem; opacity: 0.85;">Source (S)</small>
+    </div>
+
+    <!-- Arrows down from source -->
+    <div style="grid-column: 3 / 4; grid-row: 2 / 3; font-size: 2rem; color: #2563eb;">↙</div>
+    <div style="grid-column: 4 / 5; grid-row: 2 / 3; font-size: 2rem; color: #2563eb;">↓</div>
+    <div style="grid-column: 5 / 6; grid-row: 2 / 3; font-size: 2rem; color: #2563eb;">↘</div>
+
+    <!-- Data Center Nodes -->
+    <div style="grid-column: 2 / 3; grid-row: 3 / 4; background: #93c5fd; color: #1e3a8a; padding: 1rem; border-radius: 0.75rem; font-weight: 600; box-shadow: 0 4px 10px rgba(147, 197, 253, 0.4); text-align: center;">
+      Data Center A<br><small style="font-weight: 400; font-size: 0.85rem; opacity: 0.8;">Node A (us-east-1)</small><br><strong>10 Gbps</strong>
+    </div>
+    <div style="grid-column: 4 / 5; grid-row: 3 / 4; background: #93c5fd; color: #1e3a8a; padding: 1rem; border-radius: 0.75rem; font-weight: 600; box-shadow: 0 4px 10px rgba(147, 197, 253, 0.4); text-align: center;">
+      Data Center B<br><small style="font-weight: 400; font-size: 0.85rem; opacity: 0.8;">Node B (us-west-2)</small><br><strong>7 Gbps</strong>
+    </div>
+    <div style="grid-column: 6 / 7; grid-row: 3 / 4; background: #93c5fd; color: #1e3a8a; padding: 1rem; border-radius: 0.75rem; font-weight: 600; box-shadow: 0 4px 10px rgba(147, 197, 253, 0.4); text-align: center;">
+      Data Center C<br><small style="font-weight: 400; font-size: 0.85rem; opacity: 0.8;">Node C (eu-central-1)</small><br><strong>5 Gbps</strong>
+    </div>
+
+    <!-- Arrows down from data centers -->
+    <div style="grid-column: 2 / 3; grid-row: 4 / 5; font-size: 2rem; color: #2563eb;">↘</div>
+    <div style="grid-column: 4 / 5; grid-row: 4 / 5; font-size: 2rem; color: #2563eb;">↓</div>
+    <div style="grid-column: 6 / 7; grid-row: 4 / 5; font-size: 2rem; color: #2563eb;">↙</div>
+
+    <!-- Database Cluster Node -->
+    <div style="grid-column: 4 / 5; grid-row: 5 / 6; background: #60a5fa; color: #1e3a8a; padding: 1rem 1.5rem; border-radius: 0.75rem; font-weight: 600; box-shadow: 0 4px 10px rgba(96, 165, 250, 0.4); text-align: center;">
+      Database Cluster<br><small style="font-weight: 400; font-size: 0.85rem; opacity: 0.85;">Aggregation Node</small><br><strong>12 Gbps</strong>
+    </div>
+
+    <!-- Arrow down to sink -->
+    <div style="grid-column: 4 / 5; grid-row: 6 / 7; font-size: 2rem; color: #2563eb;">↓</div>
+
+    <!-- Sink Node -->
+    <div style="grid-column: 4 / 5; grid-row: 7 / 8; background: #ef4444; color: #7f1d1d; padding: 1rem 1.5rem; border-radius: 0.75rem; font-weight: 700; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.4); text-align: center;">
+      Response Delivery<br><small style="font-weight: 400; font-size: 0.85rem; opacity: 0.8;">Sink (T)</small>
+    </div>
+  </div>
+
+  <p style="margin-top: 3rem; color: #4b5563; font-size: 1rem; line-height: 1.6; max-width: 700px; margin-left: auto; margin-right: auto; text-align: center;">
+    This architecture models AWS traffic routing as a flow network where the <strong>Load Balancer</strong> acts as the source node, distributing traffic to geographically distributed <strong>Data Centers</strong> (nodes with limited capacity). These nodes forward traffic to a centralized <strong>Database Cluster</strong>, which aggregates the flow before reaching the <strong>Response Delivery</strong> sink node. Edges between nodes have bandwidth capacity constraints, allowing application of the Ford-Fulkerson algorithm to compute the maximum possible traffic flow without exceeding link capacities.
+  </p>
+</section>
+
+        </section>
+
+        <hr>
+
+        <section id="code">
+            <h2>3. Code Implementation</h2>
+            <div class="code-block">
+#include &lt;iostream&gt;
+#include &lt;vector&gt;
+#include &lt;climits&gt;
+#include &lt;cstring&gt;
+
+using namespace std;
+
+const int V = 5; // Number of vertices (0: S, 4: T)
+
+// DFS to find augmenting path from source to sink
+bool dfs(int rGraph[V][V], int s, int t, vector&lt;int&gt;&amp; parent, vector&lt;bool&gt;&amp; visited) {
+    visited[s] = true;
+    if (s == t) return true;
+
+    for (int v = 0; v &lt; V; v++) {
+        if (!visited[v] &amp;&amp; rGraph[s][v] &gt; 0) {
+            parent[v] = s;
+            if (dfs(rGraph, v, t, parent, visited))
+                return true;
+        }
+    }
+    return false;
+}
+
+// Ford-Fulkerson Algorithm Implementation
+int fordFulkerson(int graph[V][V], int s, int t) {
+    int rGraph[V][V]; // Residual graph
+    memcpy(rGraph, graph, sizeof(rGraph));
+
+    vector&lt;int&gt; parent(V);
+    int max_flow = 0;
+    int iteration = 1;
+
+    cout &lt;&lt; "=== Ford-Fulkerson Algorithm Execution ===" &lt;&lt; endl;
+
+    while (true) {
+        vector&lt;bool&gt; visited(V, false);
+        if (!dfs(rGraph, s, t, parent, visited))
+            break;
+
+        // Find minimum residual capacity along the path
+        int path_flow = INT_MAX;
+        cout &lt;&lt; "Iteration " &lt;&lt; iteration &lt;&lt; ": Path found - ";
+        
+        for (int v = t; v != s; v = parent[v]) {
+            cout &lt;&lt; v &lt;&lt; " &lt;- ";
+            path_flow = min(path_flow, rGraph[parent[v]][v]);
+        }
+        cout &lt;&lt; s &lt;&lt; " (Flow: " &lt;&lt; path_flow &lt;&lt; ")" &lt;&lt; endl;
+
+        // Update residual capacities
+        for (int v = t; v != s; v = parent[v]) {
+            int u = parent[v];
+            rGraph[u][v] -= path_flow;
+            rGraph[v][u] += path_flow;
+        }
+
+        max_flow += path_flow;
+        iteration++;
+    }
+
+    return max_flow;
+}
+
+int main() {
+    // AWS Network Topology:
+    // 0 = Load Balancer (Source)
+    // 1 = Primary DC (us-east-1) 
+    // 2 = Secondary DC (us-west-2)
+    // 3 = Database Cluster
+    // 4 = Response Delivery (Sink)
+    
+    int graph[V][V] = {
+        // 0  1  2  3  4
+        { 0,10, 5, 0, 0 }, // 0 = Load Balancer
+        { 0, 0, 0, 4, 0 }, // 1 = Primary DC
+        { 0, 0, 0, 8, 0 }, // 2 = Secondary DC  
+        { 0, 0, 0, 0,10 }, // 3 = Database Cluster
+        { 0, 0, 0, 0, 0 }  // 4 = Response Delivery
+    };
+
+    int source = 0, sink = 4;
+    int maxFlow = fordFulkerson(graph, source, sink);
+    
+    cout &lt;&lt; "\n🎯 Maximum Traffic Throughput: " &lt;&lt; maxFlow &lt;&lt; " Gbps" &lt;&lt; endl;
+    cout &lt;&lt; "✅ AWS Infrastructure can handle " &lt;&lt; maxFlow &lt;&lt; " Gbps during peak traffic!" &lt;&lt; endl;
+    
+    return 0;
+}
+            </div>
+        </section>
+
+        <hr>
+
+        <section id="visualization">
+            <h2>4. Interactive AWS Network Visualization</h2>
+            
+            <div class="controls">
+                <button id="resetBtn">Reset Network</button>
+                <button id="stepBtn">Execute Step</button>
+                <button id="autoBtn">Auto Execute</button>
+                <button id="showResultBtn" disabled>Show Final Result</button>
+            </div>
+
+            <div class="graph-container">
+                <!-- Nodes -->
+                <div class="node source" style="top: 50px; left: 250px;" id="node-0">
+                    <div>LB<br><small>(S)</small></div>
+                </div>
+                <div class="node" style="top: 180px; left: 120px;" id="node-1">
+                    <div>DC-1<br><small>(A)</small></div>
+                </div>
+                <div class="node" style="top: 180px; left: 380px;" id="node-2">
+                    <div>DC-2<br><small>(B)</small></div>
+                </div>
+                <div class="node" style="top: 320px; left: 250px;" id="node-3">
+                    <div>DB<br><small>(C)</small></div>
+                </div>
+                <div class="node sink" style="top: 460px; left: 250px;" id="node-4">
+                    <div>OUT<br><small>(T)</small></div>
+                </div>
+
+                <!-- SVG for edges -->
+                <svg>
+                    <defs>
+                        <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+                            <path d="M0,0 L0,6 L9,3 z" fill="#4b5563" />
+                        </marker>
+                        <marker id="arrow-flow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+                            <path d="M0,0 L0,6 L9,3 z" fill="#ffd500" />
+                        </marker>
+                    </defs>
+                    <!-- Edges -->
+                    <path id="edge-0-1" class="edge" d="M 285 95 L 155 215" marker-end="url(#arrow)" />
+                    <path id="edge-0-2" class="edge" d="M 315 95 L 385 215" marker-end="url(#arrow)" />
+                    <path id="edge-1-3" class="edge" d="M 155 255 L 220 355" marker-end="url(#arrow)" />
+                    <path id="edge-2-3" class="edge" d="M 415 255 L 350 355" marker-end="url(#arrow)" />
+                    <path id="edge-3-4" class="edge" d="M 290 400 L 290 460" marker-end="url(#arrow)" />
+                </svg>
+
+                <!-- Edge Labels -->
+                <div class="label" style="top: 140px; left: 200px;" id="label-0-1">10</div>
+                <div class="label" style="top: 140px; left: 330px;" id="label-0-2">5</div>
+                <div class="label" style="top: 270px; left: 170px;" id="label-1-3">4</div>
+                <div class="label" style="top: 270px; left: 350px;" id="label-2-3">8</div>
+                <div class="label" style="top: 420px; left: 270px;" id="label-3-4">10</div>
+            </div>
+
+            <div class="output" id="algorithmOutput">
+                <strong>Algorithm Status:</strong> Click "Execute Step" to start Ford-Fulkerson algorithm
+            </div>
+        </section>
+
+        <hr>
+
+        <section id="algorithm-steps">
+            <h2>5. Algorithm Execution Steps</h2>
+            <div id="steps-container">
+                <div class="step">
+                    <strong>Step 1:</strong> Initialize residual graph with original capacities
+                </div>
+                <div class="step">
+                    <strong>Step 2:</strong> Find augmenting path using DFS from source to sink
+                </div>
+                <div class="step">
+                    <strong>Step 3:</strong> Calculate bottleneck capacity along the path
+                </div>
+                <div class="step">
+                    <strong>Step 4:</strong> Update residual capacities (subtract flow, add reverse flow)
+                </div>
+                <div class="step">
+                    <strong>Step 5:</strong> Repeat until no augmenting path exists
+                </div>
+            </div>
+        </section>
+
+        <hr>
+
+        <section id="complexity">
+            <h2>6. Time and Space Complexity</h2>
+            <div class="info-panel">
+                <p><strong>Time Complexity:</strong></p>
+                <ul>
+                    <li><strong>O(E × f):</strong> where E is edges and f is maximum flow</li>
+                    <li><strong>With Edmonds-Karp (BFS):</strong> O(V × E²)</li>
+                    <li><strong>For AWS networks:</strong> Typically O(n³) for practical topologies</li>
+                </ul>
+                <p><strong>Space Complexity:</strong> O(V²) for adjacency matrix representation</p>
+            </div>
+        </section>
+
+        <hr>
+
+        <section id="aws-applications">
+            <h2>7. AWS Applications & Use Cases</h2>
+            
+            <h3>🔹 1. Auto Scaling Group Optimization</h3>
+            <div class="scenario-box">
+                <p><strong>Scenario:</strong> Dynamically scale EC2 instances based on traffic flow analysis</p>
+                <p><strong>Implementation:</strong> Use Ford-Fulkerson to determine optimal instance distribution across availability zones</p>
+            </div>
+
+            <h3>🔹 2. CloudFront CDN Route Optimization</h3>
+            <div class="scenario-box">
+                <p><strong>Scenario:</strong> Optimize content delivery paths from edge locations to origin servers</p>
+                <p><strong>Implementation:</strong> Model edge locations as intermediate nodes to maximize content throughput</p>
+            </div>
+
+            <h3>🔹 3. VPC Peering Network Design</h3>
+            <div class="scenario-box">
+                <p><strong>Scenario:</strong> Design optimal VPC peering connections for multi-region architecture</p>
+                <p><strong>Implementation:</strong> Use max-flow to determine bandwidth requirements between VPCs</p>
+            </div>
+
+            <h3>🔹 4. AWS Direct Connect Optimization</h3>
+            <div class="scenario-box">
+                <p><strong>Scenario:</strong> Optimize dedicated network connections between on-premises and AWS</p>
+                <p><strong>Implementation:</strong> Calculate maximum data transfer capacity through Direct Connect links</p>
+            </div>
+        </section>
+
+        <section id="references">
+            <h2>8. References</h2>
+            <ul>
+                <li>
+                    <strong>AWS Architecture Center:</strong> 
+                    <a href="https://aws.amazon.com/architecture/" target="_blank">https://aws.amazon.com/architecture/</a>
+                </li>
+                <li>
+                    <strong>Ford-Fulkerson Algorithm:</strong>
+                    <a href="https://en.wikipedia.org/wiki/Ford%E2%80%93Fulkerson_algorithm" target="_blank">https://en.wikipedia.org/wiki/Ford–Fulkerson_algorithm</a>
+                </li>
+                <li>
+                    <strong>AWS Load Balancer Guide:</strong>
+                    <a href="https://docs.aws.amazon.com/elasticloadbalancing/" target="_blank">https://docs.aws.amazon.com/elasticloadbalancing/</a>
+                </li>
+                <li>
+                    <strong>Network Flow Algorithms:</strong>
+                    <a href="https://www.geeksforgeeks.org/ford-fulkerson-algorithm-for-maximum-flow-problem/" target="_blank">https://www.geeksforgeeks.org/ford-fulkerson-algorithm-for-maximum-flow-problem/</a>
+                </li>
+            </ul>
+        </section>
+    </main>
+
+    <aside class="toc-sidebar">
+        <h2>Contents</h2>
+        <a href="#introduction">Introduction</a>
+        <a href="#real-scenario">Real-Time Scenario</a>
+        <a href="#code">Code Implementation</a>
+        <a href="#visualization">Visualization</a>
+        <a href="#algorithm-steps">Algorithm Steps</a>
+        <a href="#complexity">Complexity</a>
+        <a href="#aws-applications">AWS Applications</a>
+        <a href="#references">References</a>
+    </aside>
+</div>
+
+<script>
+// Ford-Fulkerson Algorithm Visualization
+class FordFulkersonVisualizer {
+    constructor() {
+        this.graph = [
+            [0, 10, 5, 0, 0],  // Load Balancer
+            [0, 0, 0, 4, 0],   // Primary DC
+            [0, 0, 0, 8, 0],   // Secondary DC
+            [0, 0, 0, 0, 10],  // Database Cluster
+            [0, 0, 0, 0, 0]    // Response Delivery
+        ];
+        
+        this.residualGraph = JSON.parse(JSON.stringify(this.graph));
+        this.maxFlow = 0;
+        this.currentStep = 0;
+        this.paths = [];
+        this.isExecuting = false;
+        
+        this.initializeEvents();
+        this.calculateAllPaths();
+    }
+
+    initializeEvents() {
+        document.getElementById('resetBtn').onclick = () => this.reset();
+        document.getElementById('stepBtn').onclick = () => this.executeStep();
+        document.getElementById('autoBtn').onclick = () => this.autoExecute();
+        document.getElementById('showResultBtn').onclick = () => this.showFinalResult();
+    }
+
+    reset() {
+        this.residualGraph = JSON.parse(JSON.stringify(this.graph));
+        this.maxFlow = 0;
+        this.currentStep = 0;
+        this.isExecuting = false;
+        
+        // Reset visual elements
+        document.querySelectorAll('.node').forEach(node => {
+            node.classList.remove('active');
+        });
+        document.querySelectorAll('.edge').forEach(edge => {
+            edge.classList.remove('flow');
+            edge.setAttribute('marker-end', 'url(#arrow)');
+        });
+        document.querySelectorAll('.label').forEach(label => {
+            label.classList.remove('highlight');
+        });
+        
+        document.getElementById('stepBtn').disabled = false;
+        document.getElementById('autoBtn').disabled = false;
+        document.getElementById('showResultBtn').disabled = true;
+        
+        this.updateOutput("Algorithm reset. Network ready for execution.");
+    }
+
+    calculateAllPaths() {
+        // Pre-calculate all augmenting paths for visualization
+        let tempGraph = JSON.parse(JSON.stringify(this.graph));
+        this.paths = [];
+        
+        while (true) {
+            const path = this.findPath(tempGraph, 0, 4);
+            if (!path) break;
+            
+            const flow = this.getPathFlow(tempGraph, path);
+            this.paths.push({ path: [...path], flow: flow });
+            
+            // Update residual graph
+            for (let i = 0; i < path.length - 1; i++) {
+                const u = path[i];
+                const v = path[i + 1];
+                tempGraph[u][v] -= flow;
+                tempGraph[v][u] += flow;
+            }
+        }
+    }
+
+    findPath(graph, source, sink) {
+        const visited = new Array(5).fill(false);
+        const parent = new Array(5).fill(-1);
+        
+        const dfs = (u) => {
+            visited[u] = true;
+            if (u === sink) return true;
+            
+            for (let v = 0; v < 5; v++) {
+                if (!visited[v] && graph[u][v] > 0) {
+                    parent[v] = u;
+                    if (dfs(v)) return true;
+                }
+            }
+            return false;
+        };
+        
+        if (!dfs(source)) return null;
+        
+        // Reconstruct path
+        const path = [];
+        let current = sink;
+        while (current !== -1) {
+            path.unshift(current);
+            current = parent[current];
+        }
+        return path;
+    }
+
+    getPathFlow(graph, path) {
+        let minFlow = Infinity;
+        for (let i = 0; i < path.length - 1; i++) {
+            const u = path[            i];
+            const v = path[i + 1];
+            minFlow = Math.min(minFlow, graph[u][v]);
+        }
+        return minFlow;
+    }
+
+    executeStep() {
+        if (this.currentStep < this.paths.length) {
+            const { path, flow } = this.paths[this.currentStep];
+            this.maxFlow += flow;
+
+            // Highlight nodes in the path
+            path.forEach(nodeIndex => {
+                const node = document.getElementById(`node-${nodeIndex}`);
+                node.classList.add('active');
+            });
+
+            // Highlight edges in the path
+            for (let i = 0; i < path.length - 1; i++) {
+                const edge = document.getElementById(`edge-${path[i]}-${path[i + 1]}`);
+                edge.classList.add('flow');
+                edge.setAttribute('marker-end', 'url(#arrow-flow)');
+            }
+
+            // Highlight labels
+            for (let i = 0; i < path.length - 1; i++) {
+                const label = document.getElementById(`label-${path[i]}-${path[i + 1]}`);
+                label.classList.add('highlight');
+            }
+
+            this.updateOutput(`Step ${this.currentStep + 1}: Path found with flow ${flow} Gbps.`);
+            this.currentStep++;
+        } else {
+            this.updateOutput("No more paths to execute. Maximum flow reached.");
+            document.getElementById('showResultBtn').disabled = false;
+        }
+    }
+
+    autoExecute() {
+        this.isExecuting = true;
+        const interval = setInterval(() => {
+            if (this.currentStep < this.paths.length) {
+                this.executeStep();
+            } else {
+                clearInterval(interval);
+                this.isExecuting = false;
+                this.updateOutput("Auto execution completed.");
+            }
+        }, 2000); // Adjust the interval as needed
+    }
+
+    showFinalResult() {
+        this.updateOutput(`🎯 Maximum Traffic Throughput: ${this.maxFlow} Gbps`);
+    }
+
+    updateOutput(message) {
+        const output = document.getElementById('algorithmOutput');
+        output.innerHTML = `<strong>Algorithm Status:</strong> ${message}`;
+    }
+}
+
+// Initialize the visualizer
+const visualizer = new FordFulkersonVisualizer();
+</script>
+</body>
+</html>

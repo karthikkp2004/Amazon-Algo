@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Dynamic Pricing & Segment Trees</title>
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+    
+    body, html {
+        height: 100%;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .container {
+        display: grid;
+        grid-template-columns: 280px 1fr 280px;
+        height: 100vh;
+        gap: 0;
+    }
+
+    .profile-sidebar, .toc-sidebar {
+        background: rgba(0, 0, 0, 0.3);
+        padding: 5rem 1.5rem;
+        overflow-y: auto;
+    }
+
+    .profile-sidebar {
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .profile-sidebar img {
+        border-radius: 50%;
+        width: 120px;
+        height: 120px;
+        object-fit: cover;
+        border: 3px solid #ffd500;
+        margin-bottom: 1rem;
+    }
+
+    .profile-sidebar h2 {
+        color: #fffbe0;
+        margin-bottom: 0.2rem;
+    }
+
+    .profile-sidebar p {
+        color: #ddd;
+        margin-bottom: 1.2rem;
+        font-size: 0.9rem;
+    }
+
+    .profile-links a {
+        display: inline-block;
+        margin: 0.3rem 0.8rem;
+        color: #ffd500;
+        font-weight: 600;
+        text-decoration: none;
+        transition: color 0.3s ease;
+    }
+    
+    .profile-links a:hover {
+        color: #fffbe0;
+    }
+
+    .content-area {
+        overflow-y: auto;
+        padding: 2rem 3rem;
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    h1, h2, h3, h4 {
+        color: #fffbe0;
+        margin-bottom: 1rem;
+    }
+
+    h1 {
+        font-size: 2.2rem;
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    p, ul {
+        margin-bottom: 1.2rem;
+        line-height: 1.6;
+    }
+
+    .code-block {
+        background-color: #1e1e2f;
+        color: #d4d4d4;
+        padding: 1rem;
+        border-radius: 8px;
+        overflow-x: auto;
+        font-family: 'Courier New', monospace;
+        white-space: pre-wrap;
+        animation: fadeIn 1s ease-in-out;
+        margin: 1rem 0;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .toc-sidebar h2 {
+        color: #fffbe0;
+        margin-bottom: 1rem;
+        font-size: 1.3rem;
+    }
+
+    .toc-sidebar a {
+        display: block;
+        color: #ffd500;
+        text-decoration: none;
+        margin: 0.6rem 0;
+        font-weight: 600;
+        transition: color 0.3s;
+    }
+
+    .toc-sidebar a:hover {
+        color: #fffbe0;
+    }
+
+    html {
+        scroll-behavior: smooth;
+    }
+
+    /* Visualization Styles */
+    #tree {
+        position: relative;
+        height: 400px;
+        margin: 2rem 0;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        padding: 20px;
+    }
+
+    .node {
+        background: #3498db;
+        color: white;
+        width: 60px;
+        height: 40px;
+        line-height: 40px;
+        text-align: center;
+        border-radius: 6px;
+        font-weight: bold;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        position: absolute;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+    .node.lazy {
+        background: #e67e22;
+        border: 2px solid #f39c12;
+    }
+
+    .node.range-highlight {
+        border: 3px solid #27ae60;
+        transform: scale(1.1);
+    }
+
+    button {
+        background: #2980b9;
+        color: white;
+        border: none;
+        padding: 0.8rem 1.5rem;
+        border-radius: 5px;
+        cursor: pointer;
+        margin: 0.5rem;
+        font-weight: 600;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        transition: background 0.3s ease;
+    }
+
+    button:hover:not(:disabled) {
+        background: #3498db;
+    }
+
+    button:disabled {
+        background: #7f8c8d;
+        cursor: not-allowed;
+    }
+
+    .controls {
+        text-align: center;
+        margin: 2rem 0;
+    }
+
+    #logs {
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 6px;
+        padding: 1rem;
+        height: 200px;
+        overflow-y: auto;
+        font-family: 'Courier New', monospace;
+        font-size: 0.9rem;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: #f8f9fa;
+    }
+
+    #legend {
+        margin-top: 2rem;
+        font-size: 0.9rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        align-items: center;
+    }
+
+    #legend span {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    #legend .node {
+        width: 20px;
+        height: 20px;
+        line-height: 20px;
+        font-size: 0.8rem;
+        position: static;
+    }
+
+    .output {
+        background: rgba(0, 0, 0, 0.3);
+        padding: 1rem;
+        border-radius: 6px;
+        border-left: 4px solid #ffd500;
+        font-family: 'Courier New', monospace;
+        margin: 1rem 0;
+    }
+
+    hr {
+        border: none;
+        border-top: 2px solid rgba(255, 213, 0, 0.5);
+        margin: 2rem 0;
+    }
+
+    #references {
+        margin-top: 3rem;
+        padding-top: 1rem;
+        border-top: 2px solid #ffd500;
+    }
+
+    #references h2 {
+        color: #ffd500;
+        margin-bottom: 1rem;
+    }
+
+    #references ul {
+        list-style-type: square;
+        padding-left: 1.5rem;
+        color: #ddd;
+        font-size: 0.9rem;
+    }
+
+    #references a {
+        color: #ffd500;
+        text-decoration: none;
+    }
+
+    #references a:hover {
+        color: #fffbe0;
+        text-decoration: underline;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 1200px) {
+        .container {
+            grid-template-columns: 1fr;
+            grid-template-rows: auto 1fr auto;
+        }
+        
+        .profile-sidebar, .toc-sidebar {
+            display: none;
+        }
+    }
+</style>
+</head>
+<body>
+<div class="container">
+    <!-- Left Profile Sidebar -->
+    <aside class="profile-sidebar" aria-label="Profile Sidebar">
+        <img src="https://avatars.githubusercontent.com/u/583231?v=4" alt="Profile Picture" />
+        <h2>Karthik K P</h2>
+        <p>Computer Science Engineer</p>
+        <p>kkarthikkp43@gmail.com</p>
+        <p><strong>📍 Location:</strong> Hubli, India</p>
+        <div class="profile-links">
+            <a href="https://github.com/karthikkp2004" target="_blank" rel="noopener noreferrer">GitHub</a>
+            <a href="https://www.linkedin.com/in/karthik-k-p-39684126a/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+        </div>
+    </aside>
+
+    <main class="content-area">
+        <h1>Dynamic Pricing & Segment Trees</h1>
+
+        <section id="introduction">
+            <h2>1. Introduction</h2>
+            <p>
+                Dynamic pricing is a strategy where the price of a product or service changes over time based on various factors such as demand, inventory levels, competitor pricing, and customer behavior. 
+                It's widely used in e-commerce platforms like Amazon, where thousands of products may have their prices updated every minute to maximize revenue and improve market competitiveness.
+            </p>
+            <p>
+                To manage these price updates efficiently, especially when they occur in ranges of products, we use advanced data structures like the <strong>Segment Tree</strong>. A Segment Tree allows:
+            </p>
+            <ul>
+                <li>Fast updates to a range of prices (e.g., apply a discount to items B–D)</li>
+                <li>Quick queries (e.g., find the lowest price among items A–E)</li>
+            </ul>
+        </section>
+
+        <hr>
+
+        <section id="code">
+            <h2>2. Code Implementation</h2>
+            <div class="code-block">
+#include &lt;iostream&gt;
+#include &lt;vector&gt;
+#include &lt;climits&gt;
+
+using namespace std;
+
+class SegmentTree {
+private:
+    int n;
+    vector&lt;int&gt; tree, lazy;
+
+    void build(vector&lt;int&gt;&amp; prices, int node, int start, int end) {
+        if (start == end) {
+            tree[node] = prices[start];
+        } else {
+            int mid = (start + end) / 2;
+            build(prices, 2*node, start, mid);
+            build(prices, 2*node+1, mid+1, end);
+            tree[node] = min(tree[2*node], tree[2*node+1]);
+        }
+    }
+
+    void propagate(int node, int start, int end) {
+        if (lazy[node] != 0) {
+            tree[node] -= lazy[node];  // Apply discount
+            if (start != end) {  // Not leaf node
+                lazy[2*node] += lazy[node];
+                lazy[2*node+1] += lazy[node];
+            }
+            lazy[node] = 0;
+        }
+    }
+
+    void updateRange(int node, int start, int end, int l, int r, int val) {
+        propagate(node, start, end);
+
+        if (r &lt; start || end &lt; l) return;  // No overlap
+        if (l &lt;= start && end &lt;= r) {  // Complete overlap
+            lazy[node] += val;
+            propagate(node, start, end);
+            return;
+        }
+        int mid = (start + end) / 2;
+        updateRange(2*node, start, mid, l, r, val);
+        updateRange(2*node+1, mid+1, end, l, r, val);
+        tree[node] = min(tree[2*node], tree[2*node+1]);
+    }
+
+    int queryMin(int node, int start, int end, int l, int r) {
+        if (r &lt; start || end &lt; l) return INT_MAX;  // No overlap
+        propagate(node, start, end);
+        if (l &lt;= start && end &lt;= r) return tree[node];  // Complete overlap
+
+        int mid = (start + end) / 2;
+        int leftMin = queryMin(2*node, start, mid, l, r);
+        int rightMin = queryMin(2*node+1, mid+1, end, l, r);
+        return min(leftMin, rightMin);
+    }
+
+public:
+    SegmentTree(vector&lt;int&gt;&amp; prices) {
+        n = prices.size();
+        tree.assign(4*n, INT_MAX);
+        lazy.assign(4*n, 0);
+        build(prices, 1, 0, n-1);
+    }
+
+    void updateRange(int l, int r, int discount) {
+        updateRange(1, 0, n-1, l, r, discount);
+    }
+
+    int queryMin(int l, int r) {
+        return queryMin(1, 0, n-1, l, r);
+    }
+};
+
+int main() {
+    // Initial product prices
+    vector&lt;int&gt; prices = {100, 200, 150, 80, 120, 90, 300, 110};
+
+    SegmentTree segTree(prices);
+
+    cout &lt;&lt; "Initial minimum price [0..7]: " &lt;&lt; segTree.queryMin(0, 7) &lt;&lt; "\n";
+
+    // Apply discount of 5 units on products from index 2 to 5
+    segTree.updateRange(2, 5, 5);
+    cout &lt;&lt; "After discount, minimum price [0..7]: " &lt;&lt; segTree.queryMin(0, 7) &lt;&lt; "\n";
+
+    // Query minimum price in subrange [3..6]
+    cout &lt;&lt; "Minimum price in products [3..6]: " &lt;&lt; segTree.queryMin(3, 6) &lt;&lt; "\n";
+
+    return 0;
+}
+            </div>
+        </section>
+
+        <hr>
+
+        <section id="visualization">
+            <h2>3. Segment Tree Visualization - Dynamic Pricing</h2>
+
+            <div id="tree"></div>
+
+            <div class="controls">
+                <button id="btnBuild">Build Segment Tree</button>
+                <button id="btnUpdate" disabled>Apply Discount [2..5]</button>
+                <button id="btnQueryAll" disabled>Query Min [0..7]</button>
+                <button id="btnQuerySub" disabled>Query Min [3..6]</button>
+            </div>
+
+            <h3>Logs / Steps:</h3>
+            <div id="logs"></div>
+
+            <div id="legend">
+                <h4>Legend:</h4>
+                <span><div class="node">V</div>Node Value</span>
+                <span><div class="node lazy">L</div>Lazy Pending</span>
+                <span style="border: 3px solid #27ae60; padding: 2px 6px; border-radius: 3px;">Range Highlight</span>
+            </div>
+        </section>
+
+        <hr>
+
+        <section id="scenario">
+            <h2>4. Segment Tree for Dynamic Pricing</h2>
+
+            <h3>Scenario</h3>
+            <p>Suppose you have 8 products with initial prices: [100, 200, 150, 80, 120, 90, 300, 110]</p>
+            <ul>
+                <li>Apply a discount of 5 units to products in the range <strong>[2, 5]</strong>.</li>
+                <li>Query the minimum price in the range <strong>[0, 7]</strong> and <strong>[3, 6]</strong>.</li>
+            </ul>
+
+            <h3>Explanation:</h3>
+            <ul>
+                <li>We start with 8 product prices.</li>
+                <li>We build a segment tree that stores the minimum price in each segment.</li>
+                <li>We use <strong>lazy propagation</strong> to efficiently apply discounts over a range without updating each element individually.</li>
+                <li>After applying the discount in the range <code>[2, 5]</code>, we query the minimum prices.</li>
+            </ul>
+
+            <h3>Output:</h3>
+            <div class="output">
+Initial minimum price [0..7]: 80<br>
+After discount, minimum price [0..7]: 75<br>
+Minimum price in products [3..6]: 75
+            </div>
+        </section>
+
+        <hr>
+
+        <section id="complexity">
+            <h2>5. Time and Space Complexity</h2>
+            <p><strong>Time Complexity:</strong></p>
+            <ul>
+                <li>Build: O(n)</li>
+                <li>Range Update: O(log n)</li>
+                <li>Range Query: O(log n)</li>
+            </ul>
+            <p><strong>Space Complexity:</strong> O(4n) = O(n) for the segment tree</p>
+        </section>
+
+        <h2>6.Applications of Segment Trees in Amazon eCommerce</h2>
+    <p>How Amazon optimizes pricing, inventory, and user experience using advanced data structures</p>
+  </header>
+
+ 
+    <section id="Applications">
+      <h3>🔹 1. Dynamic Price Updates in Ranges</h3>
+      <p><strong>Scenario:</strong> Apply a 10% discount to all electronics from product ID 1000 to 2000.</p>
+      
+
+    
+      <h3>🔹 2. Range Minimum/Maximum Price Queries</h3>
+      <p><strong>Scenario:</strong> Find the lowest price among “Running Shoes” from product ID 500 to 1500.</p>
+      
+
+          <h3>🔹 3. Flash Sales & Surge Pricing</h3>
+      <p><strong>Scenario:</strong> During high demand, increase prices slightly in product ID range 3000–4000.</p>
+      
+      <h3>🔹 4. Inventory Monitoring</h3>
+      <p><strong>Scenario:</strong> Identify low-stock categories between product IDs 10,000–12,000.</p>
+      
+    
+      <h3>🔹 5. Customer Behavior & Alerts</h3>
+      <p><strong>Scenario:</strong> Alert users if a product they wishlisted drops in price.</p>
+      
+    </section>
+
+        <section id="references">
+            <h2>7. References</h2>
+            <ul>
+                <li>
+                    <strong>Wikipedia - Segment Tree:</strong> 
+                    <a href="https://en.wikipedia.org/wiki/Segment_tree" target="_blank">https://en.wikipedia.org/wiki/Segment_tree</a>
+                </li>
+                <li>
+                    <strong>GeeksforGeeks - Segment Tree:</strong>
+                    <a href="https://www.geeksforgeeks.org/segment-tree-set-1-sum-of-given-range/" target="_blank">https://www.geeksforgeeks.org/segment-tree-set-1-sum-of-given-range/</a>
+                </li>
+                <li>
+                    <strong>Lazy Propagation in Segment Trees:</strong>
+                    <a href="https://www.geeksforgeeks.org/lazy-propagation-in-segment-tree/" target="_blank">https://www.geeksforgeeks.org/lazy-propagation-in-segment-tree/</a>
+                </li>
+            </ul>
+        </section>
+    </main>
+
+    <aside class="toc-sidebar">
+        <h2>Contents</h2>
+        <a href="#introduction">Introduction</a>
+        <a href="#code">Code Implementation</a>
+        <a href="#visualization">Visualization</a>
+        <a href="#scenario">Scenario</a>
+        <a href="#complexity">Complexity</a>
+         <a href="#Applications">Applications of Segment Trees in Amazon e-Commerce</a>
+        <a href="#references">References</a>
+    </aside>
+</div>
+
+<script>
+// Initial prices
+const prices = [100, 200, 150, 80, 120, 90, 300, 110];
+const n = prices.length;
+
+// Segment tree arrays (1-indexed for convenience)
+let tree = [];
+let lazy = [];
+
+const treeContainer = document.getElementById('tree');
+const logs = document.getElementById('logs');
+const btnBuild = document.getElementById('btnBuild');
+const btnUpdate = document.getElementById('btnUpdate');
+const btnQueryAll = document.getElementById('btnQueryAll');
+const btnQuerySub = document.getElementById('btnQuerySub');
+
+function log(msg) {
+    logs.innerHTML += msg + '<br>';
+    logs.scrollTop = logs.scrollHeight;
+}
+
+function clearLogs() {
+    logs.innerHTML = '';
+}
+
+// Size of segment tree array
+const size = 4 * n;
+
+function createNode(id) {
+    const div = document.createElement('div');
+    div.className = 'node';
+    div.id = 'node-' + id;
+    div.textContent = '-';
+    return div;
+}
+
+// Draw empty nodes in a tree layout
+function drawEmptyTree() {
+    treeContainer.innerHTML = '';
+    for(let i = 1; i < size && i <= 31; i++) { // Limit to reasonable number for display
+        treeContainer.appendChild(createNode(i));
+    }
+    layoutTree();
+}
+
+// Layout the nodes visually in a binary tree manner
+function layoutTree() {
+    const nodes = document.querySelectorAll('#tree .node');
+    const containerWidth = treeContainer.clientWidth - 40; // Account for padding
+    const levelHeight = 70;
+
+    nodes.forEach(node => {
+        const id = +node.id.split('-')[1];
+        if(id >= 32) return; // Limit display
+        
+        const level = Math.floor(Math.log2(id));
+        const maxNodesLevel = Math.pow(2, level);
+        const posInLevel = id - maxNodesLevel;
+        
+        // Calculate horizontal spacing
+        const space = containerWidth / maxNodesLevel;
+        const left = space * posInLevel + space/2 - 30; // 30 is half node width
+        
+        node.style.top = (level * levelHeight + 20) + 'px';
+        node.style.left = Math.max(0, left) + 'px';
+    });
+
+    // Draw connections
+    drawConnections();
+}
+
+// Draw SVG lines connecting parent to children
+function drawConnections() {
+    let svg = document.getElementById('svg-connections');
+    if(svg) svg.remove();
+
+    svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.id = 'svg-connections';
+    svg.style.position = 'absolute';
+    svg.style.top = '0';
+    svg.style.left = '0';
+    svg.style.width = '100%';
+    svg.style.height = '100%';
+    svg.style.pointerEvents = 'none';
+    treeContainer.appendChild(svg);
+
+    const nodes = document.querySelectorAll('#tree .node');
+    
+    nodes.forEach(node => {
+        const id = +node.id.split('-')[1];
+        if(id >= 16) return; // Only draw connections for first few levels
+        
+        const leftChildId = id * 2;
+        const rightChildId = id * 2 + 1;
+        
+        [leftChildId, rightChildId].forEach(childId => {
+            if(childId >= 32) return;
+            const child = document.getElementById('node-' + childId);
+            if(!child) return;
+            
+            const parentRect = node.getBoundingClientRect();
+            const childRect = child.getBoundingClientRect();
+            const containerRect = treeContainer.getBoundingClientRect();
+            
+            const startX = parentRect.left + parentRect.width/2 - containerRect.left;
+            const startY = parentRect.top + parentRect.height - containerRect.top;
+            const endX = childRect.left + childRect.width/2 - containerRect.left;
+            const endY = childRect.top - containerRect.top;
+            
+            const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+            line.setAttribute('x1', startX);
+            line.setAttribute('y1', startY);
+            line.setAttribute('x2', endX);
+            line.setAttribute('y2', endY);
+            line.setAttribute('stroke', 'rgba(255, 255, 255, 0.5)');
+            line.setAttribute('stroke-width', '2');
+            svg.appendChild(line);
+        });
+    });
+}
+
+// Build segment tree recursively
+function build(node, start, end) {
+    if(start === end) {
+        tree[node] = prices[start];
+        lazy[node] = 0;
+        updateNodeDisplay(node);
+        log(`Leaf node ${node} [${start}] = ${prices[start]}`);
+        return;
+    }
+    const mid = Math.floor((start + end) / 2);
+    build(2*node, start, mid);
+    build(2*node+1, mid+1, end);
+    tree[node] = Math.min(tree[2*node], tree[2*node+1]);
+    lazy[node] = 0;
+    updateNodeDisplay(node);
+    log(`Internal node ${node} [${start}-${end}] = min(${tree[2*node]}, ${tree[2*node+1]}) = ${tree[node]}`);
+}
+
+// Update the displayed value and lazy status of a node
+function updateNodeDisplay(node) {
+    const elem = document.getElementById('node-' + node);
+    if(!elem || node >= 32) return;
+    elem.textContent = tree[node] || '-';
+    if(lazy[node] && lazy[node] !== 0) {
+        elem.classList.add('lazy');
+        elem.title = 'Lazy pending discount: ' + lazy[node];
+    } else {
+        elem.classList.remove('lazy');
+        elem.title = '';
+    }
+}
+
+// Propagate lazy updates down the tree
+function propagate(node, start, end) {
+    if(lazy[node] !== 0) {
+        log(`Propagate node ${node} [${start}-${end}]: applying discount ${lazy[node]}`);
+        tree[node] -= lazy[node];
+        updateNodeDisplay(node);
+        if(start !== end) {
+            lazy[2*node] += lazy[node];
+            lazy[2*node+1] += lazy[node];
+            updateNodeDisplay(2*node);
+            updateNodeDisplay(2*node+1);
+        }
+        lazy[node] = 0;
+        updateNodeDisplay(node);
+    }
+}
+
+// Update range with discount
+function updateRange(node, start, end, l, r, val) {
+    propagate(node, start, end);
+    if(r < start || end < l) return;
+    if(l <= start && end <= r) {
+        log(`Node ${node} [${start}-${end}] fully in range [${l}-${r}], adding discount ${val}`);
+        lazy[node] += val;
+        propagate(node, start, end);
+        return;
+    }
+    const mid = Math.floor((start + end) / 2);
+    updateRange(2*node, start, mid, l, r, val);
+    updateRange(2*node+1, mid+1, end, l, r, val);
+    propagate(2*node, start, mid);
+    propagate(2*node+1, mid+1, end);
+    tree[node] = Math.min(tree[2*node], tree[2*node+1]);
+    updateNodeDisplay(node);
+    log(`Updated node ${node} [${start}-${end}] after children update: ${tree[node]}`);
+}
+
+// Query minimum price in range
+function queryMin(node, start, end, l, r) {
+    if(r < start || end < l) return Infinity;
+    propagate(node, start, end);
+    if(l <= start && end <= r) {
+        log(`Node ${node} [${start}-${end}] fully in query range [${l}-${r}] with value ${tree[node]}`);
+        highlightRange(node);
+        return tree[node];
+    }
+    const mid = Math.floor((start + end) / 2);
+    const leftMin = queryMin(2*node, start, mid, l, r);
+    const rightMin = queryMin(2*node+1, mid+1, end, l, r);
+    return Math.min(leftMin, rightMin);
+}
+
+// Highlight nodes involved in query range briefly
+function highlightRange(node) {
+    const elem = document.getElementById('node-' + node);
+    if(!elem) return;
+    elem.classList.add('range-highlight');
+    setTimeout(() => elem.classList.remove('range-highlight'), 2000);
+}
+
+// Reset everything
+function reset() {
+    tree = new Array(size).fill(Infinity);
+    lazy = new Array(size).fill(0);
+    clearLogs();
+    drawEmptyTree();
+}
+
+// Event handlers for buttons
+btnBuild.onclick = () => {
+    reset();
+    log('Building segment tree from prices: [' + prices.join(', ') + ']');
+    build(1, 0, n-1);
+    btnBuild.disabled = true;
+    btnUpdate.disabled = false;
+    btnQueryAll.disabled = false;
+    btnQuerySub.disabled = false;
+    log('Segment tree built successfully!');
+};
+
+btnUpdate.onclick = () => {
+    log('Applying discount of 5 to range [2..5]');
+    updateRange(1, 0, n-1, 2, 5, 5);
+    log('Discount applied successfully!');
+};
+
+btnQueryAll.onclick = () => {
+    log('Querying minimum price in range [0..7]');
+    const ans = queryMin(1, 0, n-1, 0, 7);
+    log(`Result: Minimum price in [0..7] is ${ans}`);
+};
+
+btnQuerySub.onclick = () => {
+    log('Querying minimum price in range [3..6]');
+    const ans = queryMin(1, 0, n-1, 3, 6);
+    log(`Result: Minimum price in [3..6] is ${ans}`);
+};
+
+// Initial setup
+window.addEventListener('load', () => {
+    reset();
+});
+
+// Handle window resize
+window.addEventListener('resize', () => {
+    if(tree[1] !== undefined) {
+        layoutTree();
+    }
+});
+</script>
+</body>
+</html>

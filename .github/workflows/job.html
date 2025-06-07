@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Job Assignment Problem</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body, html {
+      height: 100%;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .container {
+      display: grid;
+      grid-template-columns: 280px 1fr 280px;
+      height: 100vh;
+    }
+
+    .profile-sidebar, .toc-sidebar {
+      background: rgba(0, 0, 0, 0.3);
+      padding: 2rem 1.5rem;
+      overflow-y: auto;
+    }
+
+    .profile-sidebar {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .profile-sidebar img {
+      border-radius: 50%;
+      width: 120px;
+      height: 120px;
+      object-fit: cover;
+      border: 3px solid #ffd500;
+      margin-bottom: 1rem;
+    }
+
+    .profile-sidebar h2 {
+      color: #fffbe0;
+      margin-bottom: 0.2rem;
+    }
+
+    .profile-sidebar p {
+      color: #ddd;
+      margin-bottom: 1.2rem;
+      font-size: 0.9rem;
+    }
+
+    .profile-links a {
+      display: inline-block;
+      margin: 0.3rem 0.8rem;
+      color: #ffd500;
+      font-weight: 600;
+      text-decoration: none;
+      transition: color 0.3s ease;
+    }
+    .profile-links a:hover {
+      color: #fffbe0;
+    }
+
+    .content-area {
+      overflow-y: auto;
+      padding: 2rem 3rem;
+    }
+
+    h1, h2, h3 {
+      color: #fffbe0;
+      margin-bottom: 0.5rem;
+    }
+
+    p, ul {
+      margin-bottom: 1.2rem;
+    }
+
+    .code-block {
+      background-color: #1e1e2f;
+      color: #d4d4d4;
+      padding: 1rem;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-family: 'Courier New', monospace;
+      white-space: pre-wrap;
+      animation: fadeIn 1s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background-color: rgba(255, 255, 255, 0.05);
+      margin-top: 1rem;
+    }
+
+    th, td {
+      border: 1px solid #ffffff30;
+      padding: 0.75rem;
+      text-align: left;
+    }
+
+    th {
+      background-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .toc-sidebar h2 {
+      color: #fffbe0;
+      margin-bottom: 1rem;
+      font-size: 1.3rem;
+    }
+
+    .toc-sidebar a {
+      display: block;
+      color: #ffd500;
+      text-decoration: none;
+      margin: 0.6rem 0;
+      font-weight: 600;
+      transition: color 0.3s;
+    }
+
+    .toc-sidebar a:hover {
+      color: #fffbe0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    #references {
+      margin-top: 3rem;
+      padding-top: 1rem;
+      border-top: 2px solid #ffd500;
+    }
+   .grid-container {
+  text-align: center;
+  margin: 2rem auto;
+  width: 100%;
+  max-width: 700px;
+}
+
+.grid-row {
+  display: flex;
+  justify-content: space-around;
+  margin: 1rem 0;
+}
+
+.node {
+  background: #ffd700;
+  color: #222;
+  font-weight: bold;
+  padding: 1rem;
+  border-radius: 10px;
+  width: 100px;
+  text-align: center;
+  transition: transform 0.3s;
+}
+
+.worker {
+  background: #4fc3f7;
+}
+
+.job {
+  background: #81c784;
+}
+
+    #references h2 {
+      color: #ffd500;
+      margin-bottom: 1rem;
+    }
+
+    #references ul {
+      list-style-type: square;
+      padding-left: 1.5rem;
+      color: #ddd;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+  <!-- Left Profile Sidebar -->
+  <aside class="profile-sidebar" aria-label="Profile Sidebar">
+    <img src="https://avatars.githubusercontent.com/u/583231?v=4" alt="Profile Picture" />
+    <h2>Karthik K P</h2>
+    <p>Computer Science Engineer</p>
+    <p>kkarthikkp43@gmail.com</p>
+    <p><strong>📍 Location:</strong> Hubli, India</p>
+    <div class="profile-links">
+      <a href="https://github.com/karthikkp2004" target="_blank" rel="noopener noreferrer">GitHub</a>
+      <a href="https://www.linkedin.com/in/karthik-k-p-39684126a/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+      
+    </div>
+  </aside>
+
+    <!-- Middle: Content -->
+    <div class="content-area">
+      <h1>Job Assignment Problem</h1>
+
+      <div id="intro" class="section">
+        <h2>1. Introduction</h2>
+        <p>The Job Assignment Problem is about assigning <strong>n workers</strong> to <strong>n jobs</strong> such that:</p>
+        <ul>
+          <li>Each worker gets exactly one job.</li>
+          <li>Each job is done by exactly one worker.</li>
+          <li>The total cost (or time) of assignments is minimized.</li>
+        </ul>
+      </div>
+
+      <div id="matrix" class="section">
+        <h2>2. Real-World Cost Matrix</h2>
+        <p>Consider a real delivery cost matrix (in ₹) between warehouses and delivery regions:</p>
+        <table>
+          <tr>
+            <th></th>
+            <th>Region A</th>
+            <th>Region B</th>
+            <th>Region C</th>
+          </tr>
+          <tr>
+            <th>Warehouse 1</th>
+            <td>9</td>
+            <td>2</td>
+            <td>7</td>
+          </tr>
+          <tr>
+            <th>Warehouse 2</th>
+            <td>6</td>
+            <td>4</td>
+            <td>3</td>
+          </tr>
+          <tr>
+            <th>Warehouse 3</th>
+            <td>5</td>
+            <td>8</td>
+            <td>1</td>
+          </tr>
+        </table>
+      </div>
+
+
+      <section id="code">
+      <h2>3.  Job Assignment Problem - Bitmask Dynamic Programming</h2>
+      <div class="code-block" aria-label="Code example:Job Assignment">
+<pre>
+include &lt;iostream&gt;
+#include &lt;vector&gt;
+#include &lt;cstring&gt;
+using namespace std;
+
+const int MAX = 20;
+int n;
+int cost[MAX][MAX];
+int dp[MAX][1 << MAX]; // dp[i][mask]: min cost assigning jobs from person i with jobs assigned as mask
+
+int solve(int i, int mask) {
+    if (i == n) return 0; // all persons assigned
+    
+    if (dp[i][mask] != -1) return dp[i][mask];
+    
+    int ans = 1e9;
+    for (int j = 0; j < n; j++) {
+        if (!(mask & (1 << j))) { // if job j not assigned yet
+            ans = min(ans, cost[i][j] + solve(i + 1, mask | (1 << j)));
+        }
+    }
+    return dp[i][mask] = ans;
+}
+
+int main() {
+    cout << "Enter number of jobs/persons: ";
+    cin >> n;
+    cout << "Enter cost matrix (" << n << "x" << n << "):\n";
+    for (int i = 0; i < n; i++)
+        for (int j = 0; j < n; j++)
+            cin >> cost[i][j];
+    
+    memset(dp, -1, sizeof(dp));
+    int ans = solve(0, 0);
+    cout << "Minimum cost to assign all jobs = " << ans << endl;
+    return 0;
+}
+
+</pre>
+</div>
+
+  <h2> Initialization</h2>
+  <ul>
+    <li>Let <code>dp[mask]</code> be the minimum cost to assign jobs represented by <code>mask</code>.</li>
+    <li><code>n = 3</code> (number of jobs/workers)</li>
+    <li><code>dp[0] = 0</code> (no jobs assigned)</li>
+    <li>All other <code>dp[...] = ∞</code></li>
+  </ul>
+<div id="assignment-grid" class="section">
+
+  <h2>4. Step-by-Step DP Computation</h2>
+
+  <h3>Step 1: Assigning First Warehouse</h3>
+  <table>
+    <tr><th>Mask</th><th>Assigned Job</th><th>New Mask</th><th>Cost</th><th>dp[new_mask]</th></tr>
+    <tr><td>000</td><td>Job 0 (A)</td><td>001</td><td>9</td><td>9</td></tr>
+    <tr><td>000</td><td>Job 1 (B)</td><td>010</td><td>2</td><td>2</td></tr>
+    <tr><td>000</td><td>Job 2 (C)</td><td>100</td><td>7</td><td>7</td></tr>
+  </table>
+
+ <img src="job.png" width="700" height="750" alt="Example Image">
+  <h3>Step 2: Assigning Second Warehouse</h3>
+  <table>
+    <tr><th>Mask</th><th>Warehouse</th><th>Jobs Done</th><th>New Assignment</th><th>New Mask</th><th>Cost</th></tr>
+    <tr><td>001</td><td>W2</td><td>A</td><td>B → 4</td><td>011</td><td>9+4=13</td></tr>
+    <tr><td></td><td></td><td></td><td>C → 3</td><td>101</td><td>9+3=12</td></tr>
+    <tr><td>010</td><td>W2</td><td>B</td><td>A → 6</td><td>011</td><td class="highlight">2+6=8 ✅</td></tr>
+    <tr><td></td><td></td><td></td><td>C → 3</td><td>110</td><td class="highlight">2+3=5 ✅</td></tr>
+    <tr><td>100</td><td>W2</td><td>C</td><td>A → 6</td><td>101</td><td>7+6=13</td></tr>
+    <tr><td></td><td></td><td></td><td>B → 4</td><td>110</td><td>7+4=11</td></tr>
+  </table>
+
+  <div class="summary">
+    Best so far:
+    <ul>
+      <li><code>dp[011] = 8</code></li>
+      <li><code>dp[101] = 12</code></li>
+      <li><code>dp[110] = 5</code></li>
+    </ul>
+  </div>
+
+  <h3>Step 3: Assigning Third Warehouse</h3>
+  <table>
+    <tr><th>Mask</th><th>W3 Assigns</th><th>Final Job</th><th>Final Mask</th><th>Cost</th></tr>
+    <tr><td>011</td><td>→ C</td><td>011 → 111</td><td>111</td><td class="highlight">8 + 1 = 9 ✅</td></tr>
+    <tr><td>101</td><td>→ B</td><td>101 → 111</td><td>111</td><td>12 + 8 = 20</td></tr>
+    <tr><td>110</td><td>→ A</td><td>110 → 111</td><td>111</td><td>5 + 5 = 10</td></tr>
+  </table>
+
+  <div class="summary">
+     Minimum Cost: <code>dp[111] = 9</code>
+  </div>
+
+  <h2> Optimal Assignment</h2>
+  <ul>
+    <li>Warehouse 1 → Region B (Cost: 2)</li>
+    <li>Warehouse 2 → Region C (Cost: 3)</li>
+    <li>Warehouse 3 → Region A (Cost: 4)</li>
+  </ul>
+
+  <table>
+    <tr><th>Warehouse</th><th>Assigned Region</th><th>Cost</th></tr>
+    <tr><td>W1</td><td>Region B</td><td>2</td></tr>
+    <tr><td>W2</td><td>Region C</td><td>3</td></tr>
+    <tr><td>W3</td><td>Region A</td><td>4</td></tr>
+    <tr class="highlight"><td colspan="2"><strong>Total</strong></td><td><strong>9</strong></td></tr>
+  </table>
+
+</div>
+
+
+</html>
+
+
+
+      <div id="amazon" class="section">
+
+       <h2>5. Amazon Job Assignment Scenario </h2>
+    <ul>
+      <li><strong>Amazon has 3 warehouses</strong>: Bangalore, Hyderabad, Chennai</li>
+      <li><strong>Needs to deliver to 3 regions</strong>: Coimbatore, Vijayawada, Madurai</li>
+    </ul>
+
+
+  <hr>
+
+
+    <h2> Assignment Challenges</h2>
+    <ul>
+      <li>Each warehouse has <strong>different efficiency</strong> for each region (distance, cost, traffic)</li>
+      <li>Wrong assignment leads to <strong>higher delivery time and cost</strong></li>
+    </ul>
+
+
+  <hr>
+
+
+    <h2> Optimization Strategy</h2>
+    <ul>
+      <li>Amazon uses the <strong>Job Assignment Problem</strong> to reduce delivery costs</li>
+      <li>Applies <strong>Bitmask Dynamic Programming</strong> to:
+        <ul>
+          <li>Explore all combinations efficiently</li>
+          <li>Avoid repeated calculations</li>
+          <li>Enable real-time decisions</li>
+        </ul>
+      </li>
+    </ul>
+  
+
+  <hr>
+
+
+    <h2> Result (Example)</h2>
+    <ul>
+      <li>Bangalore → Vijayawada</li>
+      <li>Hyderabad → Madurai</li>
+      <li>Chennai → Coimbatore</li>
+      <li>→ This combination gives <strong>minimum delivery cost</strong></li>
+    </ul>
+  
+
+  <hr>
+
+
+    <h2> Real-World Impact</h2>
+    <ul>
+      <li><strong>Faster delivery times</strong></li>
+      <li><strong>Lower operational cost</strong></li>
+      <li><strong>Balanced warehouse loads</strong></li>
+      <li><strong>Smarter logistics decisions every day</strong></li>
+    </ul>
+
+</div>
+
+      <div id="complexity" class="section">
+        <h2>6. Time and Space Complexity</h2>
+        <ul>
+          <li><strong>Time Complexity:</strong> O(n² · 2ⁿ)</li>
+          <li><strong>Space Complexity:</strong> O(n · 2ⁿ)</li>
+        </ul>
+        
+      </div>
+
+      <div id="references" class="section">
+        <h2>7. References</h2>
+        
+    <ul>
+      <li>
+        <strong>Bitmask Dynamic Programming:</strong> 
+        
+          <a href ="https://www.algotree.org/algorithms/dynamic_programming/assignments_using_bitmask/"   target="_blank" style="color: #ffd500;">https://www.algotree.org/algorithms/dynamic_programming/assignments_using_bitmask/</a>
+     </li>
+     <li>
+
+          
+          <strong>Job-assignment using Branch and Bound</strong>
+          
+           <a href ="https://www.geeksforgeeks.org/job-assignment-problem-using-branch-and-bound/"  target="_blank" style="color: #ffd500;" > https://www.geeksforgeeks.org/job-assignment-problem-using-branch-and-bound/</a>
+      </li>
+
+        
+    </ul>
+
+    
+      <strong> H. W. (1955). <em>The Hungarian Method for the Assignment Problem</em>. <strong>Naval Research Logistics Quarterly</strong>, 2(1-2), 83–97.  </strong>
+      <a href="https://onlinelibrary.wiley.com/doi/abs/10.1002/nav.3800020109" target="_blank" style="color: #ffd500;" >https://onlinelibrary.wiley.com/doi/abs/10.1002/nav.3800020109</a>
+    
+      </div>
+    </div>
+
+    <!-- Right: TOC -->
+    <div class="toc-sidebar">
+      <h2>Contents</h2>
+      <a href="#intro">1. Introduction</a>
+      <a href="#matrix">2. Real-World Cost Matrix</a>
+      <a href ="#code">3 Code</a>
+      <a href="#assignment-grid">4. Step by step DP computation</a>
+      <a href="#amazon">5. Amazon Scenario Example</a>
+      <a href="#complexity">6. Time and Space Complexity</a>
+      <a href="#references">7. References</a>
+    </div>
+  </div>
+</body>
+
+
+
+
+
+</html>
